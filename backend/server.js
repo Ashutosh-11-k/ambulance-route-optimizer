@@ -286,6 +286,91 @@ app.delete("/api/patients/:id", async (req, res) => {
   }
 });
 
+// Route distance calculation = Haversine formula
+function calculateDistance(lat1, lon1, lat2, lon2) {
+  const earthRadius = 6371;
+
+  const latitudeDifference = ((lat2 - lat1) * Math.PI) / 180;
+  const longitudeDifference = ((lon2 - lon1) * Math.PI) / 180;
+
+  const a =
+    Math.sin(latitudeDifference / 2) * Math.sin(latitudeDifference / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(longitudeDifference / 2) *
+      Math.sin(longitudeDifference / 2);
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return earthRadius * c;
+}
+
+app.get(
+  "/api/routes/calculate/:ambulanceId/:patientId/:hospitalId",
+  async (req, res) => {
+    try {
+      const { ambulanceId, patientId, hospitalId } = req.params;
+
+      const ambulance = await Ambulance.findById(ambulanceId);
+      const patient = await Patient.findById(patientId);
+      const hospital = await Hospital.findById(hospitalId);
+
+      if (!ambulance) {
+        return res.status(404).json({
+          message: "Ambulance not found",
+        });
+      }
+
+      if (!patient) {
+        return res.status(404).json({
+          message: "Patient not found",
+        });
+      }
+
+      if (!hospital) {
+        return res.status(404).json({
+          message: "Hospital not found",
+        });
+      }
+
+      const ambulanceToPatient = calculateDistance(
+        ambulance.currentLocation.latitude,
+        ambulance.currentLocation.longitude,
+        patient.location.latitude,
+        patient.location.longitude,
+      );
+
+      const patientToHospital = calculateDistance(
+        patient.location.latitude,
+        patient.location.longitude,
+        hospital.location.latitude,
+        hospital.location.longitude,
+      );
+
+      const totalDistance = ambulanceToPatient + patientToHospital;
+
+      res.status(200).json({
+        ambulance: ambulance._id,
+        patient: patient._id,
+        hospital: hospital._id,
+
+        route: {
+          ambulanceToPatient: Number(ambulanceToPatient.toFixed(2)),
+          patientToHospital: Number(patientToHospital.toFixed(2)),
+          totalDistance: Number(totalDistance.toFixed(2)),
+        },
+
+        unit: "kilometers",
+      });
+    } catch (err) {
+      res.status(400).json({
+        message: "Failed to calculate route",
+        error: err.message,
+      });
+    }
+  },
+);
+
 const PORT = 5000;
 
 app.listen(PORT, () => {
