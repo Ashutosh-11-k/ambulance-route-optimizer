@@ -5,6 +5,7 @@ require("dotenv").config();
 
 const Ambulance = require("./models/Ambulance");
 const Hospital = require("./models/Hospital");
+const Patient = require("./models/Patient");
 
 const app = express();
 
@@ -186,6 +187,100 @@ app.delete("/api/hospitals/:id", async (req, res) => {
   } catch (err) {
     res.status(400).json({
       message: "Failed to delete Hospital",
+      error: err.message,
+    });
+  }
+});
+
+//Patient routes
+
+app.post("/api/patients", async (req, res) => {
+  try {
+    const patient = new Patient(req.body);
+
+    const savedPatient = await patient.save();
+
+    res.status(201).json(savedPatient);
+  } catch (err) {
+    res.status(400).json({
+      message: "Failed to create Patient",
+      error: err.message,
+    });
+  }
+});
+
+app.get("/api/patients", async (req, res) => {
+  try {
+    const patients = await Patient.find();
+
+    res.status(200).json(patients);
+  } catch (err) {
+    res.status(500).json({
+      message: "Failed to fetch Patients",
+      error: err.message,
+    });
+  }
+});
+
+app.get("/api/patients/:id", async (req, res) => {
+  try {
+    const patient = await Patient.findById(req.params.id);
+
+    if (!patient) {
+      return res.status(404).json({
+        message: "Patient not found",
+      });
+    }
+
+    res.status(200).json(patient);
+  } catch (err) {
+    res.status(500).json({
+      message: "Failed to fetch Patients",
+      error: err.message,
+    });
+  }
+});
+
+app.put("/api/patients/:id", async (req, res) => {
+  try {
+    const updatedPatient = await Patient.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true, runValidators: true },
+    );
+
+    if (!updatedPatient) {
+      return res.status(404).json({
+        message: "Patient not found",
+      });
+    }
+
+    res.status(200).json(updatedPatient);
+  } catch (err) {
+    res.status(400).json({
+      message: "Failed to update Patient",
+      error: err.message,
+    });
+  }
+});
+
+app.delete("/api/patients/:id", async (req, res) => {
+  try {
+    const deletedPatient = await Patient.findByIdAndDelete(req.params.id);
+
+    if (!deletedPatient) {
+      return res.status(404).json({
+        message: "Patient not found",
+      });
+    }
+
+    res.status(200).json({
+      message: "Patient deleted successfully",
+      patient: deletedPatient,
+    });
+  } catch (err) {
+    res.status(400).json({
+      message: "Failed to delete Patient",
       error: err.message,
     });
   }
