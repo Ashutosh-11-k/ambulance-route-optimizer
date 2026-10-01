@@ -371,6 +371,80 @@ app.get(
   },
 );
 
+// Generate possible route combinations for a patient
+app.get("/api/routes/options/:patientId", async (req, res) => {
+  try {
+    const { patientId } = req.params;
+    const patient = await Patient.findById(patientId);
+
+    if (!patient) {
+      return res.status(404).json({
+        message: "Patient not found",
+      });
+    }
+
+    const ambulances = await Ambulance.find({
+      status: "available",
+    });
+
+    const hospitals = await Hospital.find({
+      emergencyAvailable: true,
+      availableBeds: { $gt: 0 },
+    });
+
+    const routes = [];
+
+    // Create every possible ambulance + hospital combination
+    for (const ambulance of ambulances) {
+      for (const hospital of hospitals) {
+        const ambulanceToPatient = calculateDistance(
+          ambulance.currentLocation.latitude,
+          ambulance.currentLocation.longitude,
+          patient.location.latitude,
+          patient.location.longitude,
+        );
+
+        const patientToHospital = calculateDistance(
+          patient.location.latitude,
+          patient.location.longitude,
+          hospital.location.latitude,
+          hospital.location.longitude,
+        );
+
+        const totalDistance = ambulanceToPatient + patientToHospital;
+
+        routes.push({
+          ambulance: ambulance._id,
+          patient: patient._id,
+          hospital: hospital._id,
+
+          ambulanceNumber: ambulance.ambulanceNumber,
+          hospitalName: hospital.name,
+
+          route: {
+            ambulanceToPatient: Number(ambulanceToPatient.toFixed(2)),
+            patientToHospital: Number(patientToHospital.toFixed(2)),
+            totalDistance: Number(totalDistance.toFixed(2)),
+          },
+
+          unit: "kilometers",
+        });
+      }
+    }
+
+    res.status(200).json({
+      patient: patient._id,
+      totalRoutes: routes.length,
+      routes: routes,
+    });
+  } catch (err) {
+    res.status(400).json({
+      message: "Failed to generate route options",
+      error: err.message,
+    });
+  }
+});
+
 const PORT = 5000;
 
 app.listen(PORT, () => {
