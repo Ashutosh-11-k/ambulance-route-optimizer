@@ -7,6 +7,8 @@ const Ambulance = require("./models/Ambulance");
 const Hospital = require("./models/Hospital");
 const Patient = require("./models/Patient");
 
+const { createPopulation } = require("./geneticAlgorithm");
+
 const app = express();
 
 app.use(cors());
@@ -432,10 +434,14 @@ app.get("/api/routes/options/:patientId", async (req, res) => {
       }
     }
 
+    // Create the GA population from the generated routes
+    const population = createPopulation(routes);
+
     res.status(200).json({
       patient: patient._id,
       totalRoutes: routes.length,
       routes: routes,
+      population: population,
     });
   } catch (err) {
     res.status(400).json({
