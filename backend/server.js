@@ -445,6 +445,90 @@ app.get("/api/routes/options/:patientId", async (req, res) => {
   }
 });
 
+// Find the shortest possible route for a patient
+app.get("/api/routes/shortest/:patientId", async (req, res) => {
+  try {
+    const { patientId } = req.params;
+
+    const patient = await Patient.findById(patientId);
+
+    if (!patient) {
+      return res.status(404).json({
+        message: "Patient not found",
+      });
+    }
+
+    const ambulances = await Ambulance.find({
+      status: "available",
+    });
+
+    const hospitals = await Hospital.find({
+      emergencyAvailable: true,
+      availableBeds: { $gt: 0 },
+    });
+
+    let shortestRoute = null;
+
+    for (const ambulance of ambulances) {
+      for (const hospital of hospitals) {
+        const ambulanceToPatient = calculateDistance(
+          ambulance.currentLocation.latitude,
+          ambulance.currentLocation.longitude,
+          patient.location.latitude,
+          patient.location.longitude,
+        );
+
+        const patientToHospital = calculateDistance(
+          patient.location.latitude,
+          patient.location.longitude,
+          hospital.location.latitude,
+          hospital.location.longitude,
+        );
+
+        const totalDistance = ambulanceToPatient + patientToHospital;
+
+        if (
+          shortestRoute === null ||
+          totalDistance < shortestRoute.totalDistance
+        ) {
+          shortestRoute = {
+            ambulance: ambulance._id,
+            patient: patient._id,
+            hospital: hospital._id,
+
+            ambulanceNumber: ambulance.ambulanceNumber,
+            hospitalName: hospital.name,
+
+            route: {
+              ambulanceToPatient: Number(ambulanceToPatient.toFixed(2)),
+              patientToHospital: Number(patientToHospital.toFixed(2)),
+              totalDistance: Number(totalDistance.toFixed(2)),
+            },
+
+            unit: "kilometers",
+          };
+        }
+      }
+    }
+    // No route was possible
+    if (!shortestRoute) {
+      return res.status(404).json({
+        message: "No available route found",
+      });
+    }
+
+    res.status(200).json({
+      message: "Shortest route found successfully",
+      route: shortestRoute,
+    });
+  } catch (err) {
+    res.status(400).json({
+      message: "Failed to find shortest route",
+      error: err.message,
+    });
+  }
+});
+
 const PORT = 5000;
 
 app.listen(PORT, () => {
