@@ -7,7 +7,13 @@ const Ambulance = require("./models/Ambulance");
 const Hospital = require("./models/Hospital");
 const Patient = require("./models/Patient");
 
-const { createPopulation } = require("./geneticAlgorithm");
+const {
+  createPopulation,
+  calculateFitness,
+  selection,
+  crossover,
+  mutation,
+} = require("./geneticAlgorithm");
 
 const app = express();
 
@@ -436,12 +442,19 @@ app.get("/api/routes/options/:patientId", async (req, res) => {
 
     // Create the GA population from the generated routes
     const population = createPopulation(routes);
+    const populationWithFitness = calculateFitness(population);
+    const selectedIndividuals = selection(populationWithFitness);
+    const children = crossover(selectedIndividuals, routes);
+    const mutatedChildren = mutation(children, routes);
 
     res.status(200).json({
       patient: patient._id,
       totalRoutes: routes.length,
       routes: routes,
-      population: population,
+      population: populationWithFitness,
+      selectedIndividuals: selectedIndividuals,
+      children: children,
+      mutatedChildren: mutatedChildren,
     });
   } catch (err) {
     res.status(400).json({
