@@ -13,6 +13,7 @@ const {
   selection,
   crossover,
   mutation,
+  runGenerations,
 } = require("./geneticAlgorithm");
 
 const app = express();
@@ -383,6 +384,7 @@ app.get(
 app.get("/api/routes/options/:patientId", async (req, res) => {
   try {
     const { patientId } = req.params;
+
     const patient = await Patient.findById(patientId);
 
     if (!patient) {
@@ -391,18 +393,11 @@ app.get("/api/routes/options/:patientId", async (req, res) => {
       });
     }
 
-    const ambulances = await Ambulance.find({
-      status: "available",
-    });
-
-    const hospitals = await Hospital.find({
-      emergencyAvailable: true,
-      availableBeds: { $gt: 0 },
-    });
+    const ambulances = await Ambulance.find();
+    const hospitals = await Hospital.find();
 
     const routes = [];
 
-    // Create every possible ambulance + hospital combination
     for (const ambulance of ambulances) {
       for (const hospital of hospitals) {
         const ambulanceToPatient = calculateDistance(
@@ -425,41 +420,34 @@ app.get("/api/routes/options/:patientId", async (req, res) => {
           ambulance: ambulance._id,
           patient: patient._id,
           hospital: hospital._id,
-
           ambulanceNumber: ambulance.ambulanceNumber,
           hospitalName: hospital.name,
-
           route: {
             ambulanceToPatient: Number(ambulanceToPatient.toFixed(2)),
             patientToHospital: Number(patientToHospital.toFixed(2)),
             totalDistance: Number(totalDistance.toFixed(2)),
           },
-
-          unit: "kilometers",
         });
       }
     }
 
-    // Create the GA population from the generated routes
-    const population = createPopulation(routes);
-    const populationWithFitness = calculateFitness(population);
-    const selectedIndividuals = selection(populationWithFitness);
-    const children = crossover(selectedIndividuals, routes);
-    const mutatedChildren = mutation(children, routes);
+    const numberOfGenerations = 5;
+
+    const generations = runGenerations(routes, numberOfGenerations);
 
     res.status(200).json({
       patient: patient._id,
       totalRoutes: routes.length,
       routes: routes,
-      population: populationWithFitness,
-      selectedIndividuals: selectedIndividuals,
-      children: children,
-      mutatedChildren: mutatedChildren,
+      numberOfGenerations: numberOfGenerations,
+      generations: generations,
     });
-  } catch (err) {
-    res.status(400).json({
-      message: "Failed to generate route options",
-      error: err.message,
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      message: "Error calculating routes",
+      error: error.message,
     });
   }
 });
