@@ -6,9 +6,14 @@ function createPopulation(routes) {
       hospital: route.hospital,
       ambulanceNumber: route.ambulanceNumber,
       hospitalName: route.hospitalName,
+
+      ambulanceToPatient: route.route.ambulanceToPatient,
+      patientToHospital: route.route.patientToHospital,
+
       distance: route.route.totalDistance,
     };
   });
+
   return population;
 }
 
@@ -59,12 +64,20 @@ function crossover(selectedIndividuals, routes) {
       );
     });
 
+    if (!matchingRoute) {
+      continue;
+    }
+
     const child = {
       ambulance: childAmbulance,
       patient: parent1.patient,
       hospital: childHospital,
       ambulanceNumber: parent1.ambulanceNumber,
       hospitalName: parent2.hospitalName,
+
+      ambulanceToPatient: matchingRoute.route.ambulanceToPatient,
+      patientToHospital: matchingRoute.route.patientToHospital,
+
       distance: matchingRoute.route.totalDistance,
       fitness: Number((1 / matchingRoute.route.totalDistance).toFixed(4)),
     };
@@ -78,8 +91,6 @@ function crossover(selectedIndividuals, routes) {
         hospital: parent1.hospital,
         ambulanceNumber: parent2.ambulanceNumber,
         hospitalName: parent1.hospitalName,
-        distance: matchingRoute.route.totalDistance,
-        fitness: Number((1 / matchingRoute.route.totalDistance).toFixed(4)),
       };
 
       const secondMatchingRoute = routes.find((route) => {
@@ -90,14 +101,20 @@ function crossover(selectedIndividuals, routes) {
       });
 
       if (secondMatchingRoute) {
+        secondChild.ambulanceToPatient =
+          secondMatchingRoute.route.ambulanceToPatient;
+
+        secondChild.patientToHospital =
+          secondMatchingRoute.route.patientToHospital;
+
         secondChild.distance = secondMatchingRoute.route.totalDistance;
 
         secondChild.fitness = Number(
           (1 / secondMatchingRoute.route.totalDistance).toFixed(4),
         );
-      }
 
-      children.push(secondChild);
+        children.push(secondChild);
+      }
     }
   }
 
@@ -119,10 +136,18 @@ function mutation(children, routes) {
       const mutationRoute = routes[randomRouteIndex];
 
       child.ambulance = mutationRoute.ambulance;
+      child.patient = mutationRoute.patient;
       child.hospital = mutationRoute.hospital;
+
       child.ambulanceNumber = mutationRoute.ambulanceNumber;
       child.hospitalName = mutationRoute.hospitalName;
+
+      child.ambulanceToPatient = mutationRoute.route.ambulanceToPatient;
+
+      child.patientToHospital = mutationRoute.route.patientToHospital;
+
       child.distance = mutationRoute.route.totalDistance;
+
       child.fitness = Number(
         (1 / mutationRoute.route.totalDistance).toFixed(4),
       );

@@ -437,7 +437,24 @@ app.get("/api/routes/options/:patientId", async (req, res) => {
 
     const generations = gaResult.generations;
 
-    const bestRoute = gaResult.bestRoute;
+    const gaBestRoute = gaResult.bestRoute;
+
+    const bestRoute = gaBestRoute
+      ? {
+          ambulance: gaBestRoute.ambulance,
+          patient: gaBestRoute.patient,
+          hospital: gaBestRoute.hospital,
+          ambulanceNumber: gaBestRoute.ambulanceNumber,
+          hospitalName: gaBestRoute.hospitalName,
+          route: {
+            ambulanceToPatient: gaBestRoute.ambulanceToPatient,
+            patientToHospital: gaBestRoute.patientToHospital,
+            totalDistance: gaBestRoute.distance,
+          },
+          fitness: gaBestRoute.fitness,
+          unit: "kilometers",
+        }
+      : null;
 
     res.status(200).json({
       patient: patient._id,
