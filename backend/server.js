@@ -433,21 +433,11 @@ app.get("/api/routes/options/:patientId", async (req, res) => {
 
     const numberOfGenerations = 5;
 
-    const generations = runGenerations(routes, numberOfGenerations);
+    const gaResult = runGenerations(routes, numberOfGenerations);
 
-    // Get the final population
-    const finalGeneration = generations[generations.length - 1];
+    const generations = gaResult.generations;
 
-    const finalPopulation = finalGeneration.mutatedChildren;
-
-    // Find the individual with the highest fitness
-    const bestRoute = finalPopulation.reduce((best, current) => {
-      if (current.fitness > best.fitness) {
-        return current;
-      }
-
-      return best;
-    });
+    const bestRoute = gaResult.bestRoute;
 
     res.status(200).json({
       patient: patient._id,

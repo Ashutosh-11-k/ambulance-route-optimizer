@@ -139,6 +139,8 @@ function runGenerations(routes, numberOfGenerations) {
 
   const generations = [];
 
+  let bestRoute = null;
+
   for (let generation = 1; generation <= numberOfGenerations; generation++) {
     const populationWithFitness = calculateFitness(population);
 
@@ -148,6 +150,18 @@ function runGenerations(routes, numberOfGenerations) {
 
     const mutatedChildren = mutation(children, routes);
 
+    const generationBestRoute = mutatedChildren.reduce((best, current) => {
+      if (best === null || current.fitness > best.fitness) {
+        return current;
+      }
+
+      return best;
+    }, null);
+
+    if (bestRoute === null || generationBestRoute.fitness > bestRoute.fitness) {
+      bestRoute = generationBestRoute;
+    }
+
     population = mutatedChildren;
 
     generations.push({
@@ -156,10 +170,14 @@ function runGenerations(routes, numberOfGenerations) {
       selectedIndividuals: selectedIndividuals,
       children: children,
       mutatedChildren: mutatedChildren,
+      generationBestRoute: generationBestRoute,
     });
   }
 
-  return generations;
+  return {
+    generations: generations,
+    bestRoute: bestRoute,
+  };
 }
 
 module.exports = {
