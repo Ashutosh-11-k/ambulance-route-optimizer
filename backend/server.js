@@ -422,6 +422,7 @@ app.get("/api/routes/options/:patientId", async (req, res) => {
           hospital: hospital._id,
           ambulanceNumber: ambulance.ambulanceNumber,
           hospitalName: hospital.name,
+          emergencyPriority: patient.emergencyPriority,
           route: {
             ambulanceToPatient: Number(ambulanceToPatient.toFixed(2)),
             patientToHospital: Number(patientToHospital.toFixed(2)),

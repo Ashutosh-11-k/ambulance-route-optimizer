@@ -6,6 +6,7 @@ function createPopulation(routes) {
       hospital: route.hospital,
       ambulanceNumber: route.ambulanceNumber,
       hospitalName: route.hospitalName,
+      emergencyPriority: route.emergencyPriority,
 
       ambulanceToPatient: route.route.ambulanceToPatient,
       patientToHospital: route.route.patientToHospital,
@@ -17,11 +18,25 @@ function createPopulation(routes) {
   return population;
 }
 
-function calculateFitness(population) {
+function calculateFitness(population, shortestDistance) {
+  if (population.length === 0) {
+    return [];
+  }
+
+  if (shortestDistance === undefined) {
+    shortestDistance = Math.min(
+      ...population.map((individual) => individual.distance),
+    );
+  }
+
   return population.map((individual) => {
+    const priorityScore = individual.emergencyPriority / 5;
+    const distanceScore = shortestDistance / individual.distance;
+    const fitness = 0.6 * priorityScore + 0.4 * distanceScore;
+
     return {
       ...individual,
-      fitness: Number((1 / individual.distance).toFixed(4)),
+      fitness: Number(fitness.toFixed(4)),
     };
   });
 }
@@ -74,12 +89,12 @@ function crossover(selectedIndividuals, routes) {
       hospital: childHospital,
       ambulanceNumber: parent1.ambulanceNumber,
       hospitalName: parent2.hospitalName,
+      emergencyPriority: matchingRoute.emergencyPriority,
 
       ambulanceToPatient: matchingRoute.route.ambulanceToPatient,
       patientToHospital: matchingRoute.route.patientToHospital,
 
       distance: matchingRoute.route.totalDistance,
-      fitness: Number((1 / matchingRoute.route.totalDistance).toFixed(4)),
     };
 
     children.push(child);
@@ -91,6 +106,7 @@ function crossover(selectedIndividuals, routes) {
         hospital: parent1.hospital,
         ambulanceNumber: parent2.ambulanceNumber,
         hospitalName: parent1.hospitalName,
+        emergencyPriority: parent2.emergencyPriority,
       };
 
       const secondMatchingRoute = routes.find((route) => {
@@ -109,9 +125,7 @@ function crossover(selectedIndividuals, routes) {
 
         secondChild.distance = secondMatchingRoute.route.totalDistance;
 
-        secondChild.fitness = Number(
-          (1 / secondMatchingRoute.route.totalDistance).toFixed(4),
-        );
+        secondChild.emergencyPriority = secondMatchingRoute.emergencyPriority;
 
         children.push(secondChild);
       }
@@ -130,7 +144,7 @@ function mutation(children, routes) {
     const mutationRate = 0.5;
     const randomValue = Math.random();
 
-    if (randomValue < mutationRate) {
+    if (randomValue < mutationRate && routes.length > 0) {
       const randomRouteIndex = Math.floor(Math.random() * routes.length);
 
       const mutationRoute = routes[randomRouteIndex];
@@ -138,19 +152,15 @@ function mutation(children, routes) {
       child.ambulance = mutationRoute.ambulance;
       child.patient = mutationRoute.patient;
       child.hospital = mutationRoute.hospital;
-
       child.ambulanceNumber = mutationRoute.ambulanceNumber;
       child.hospitalName = mutationRoute.hospitalName;
+      child.emergencyPriority = mutationRoute.emergencyPriority;
 
       child.ambulanceToPatient = mutationRoute.route.ambulanceToPatient;
 
       child.patientToHospital = mutationRoute.route.patientToHospital;
 
       child.distance = mutationRoute.route.totalDistance;
-
-      child.fitness = Number(
-        (1 / mutationRoute.route.totalDistance).toFixed(4),
-      );
     }
 
     mutatedChildren.push(child);
@@ -161,13 +171,22 @@ function mutation(children, routes) {
 
 function runGenerations(routes, numberOfGenerations) {
   let population = createPopulation(routes);
+  const shortestDistance = Math.min(
+    ...population.map((individual) => individual.distance),
+  );
 
   const generations = [];
 
   let bestRoute = null;
 
   for (let generation = 1; generation <= numberOfGenerations; generation++) {
-    const populationWithFitness = calculateFitness(population);
+    const populationWithFitness = calculateFitness(
+      population,
+      shortestDistance,
+    );
+    if (populationWithFitness.length === 0) {
+      break;
+    }
 
     const selectedIndividuals = selection(populationWithFitness);
 
@@ -175,7 +194,15 @@ function runGenerations(routes, numberOfGenerations) {
 
     const mutatedChildren = mutation(children, routes);
 
-    const generationBestRoute = mutatedChildren.reduce((best, current) => {
+    const evaluatedChildren = calculateFitness(
+      mutatedChildren,
+      shortestDistance,
+    );
+    if (evaluatedChildren.length === 0) {
+      break;
+    }
+
+    const generationBestRoute = evaluatedChildren.reduce((best, current) => {
       if (best === null || current.fitness > best.fitness) {
         return current;
       }
@@ -187,14 +214,14 @@ function runGenerations(routes, numberOfGenerations) {
       bestRoute = generationBestRoute;
     }
 
-    population = mutatedChildren;
+    population = evaluatedChildren;
 
     generations.push({
       generation: generation,
       population: populationWithFitness,
       selectedIndividuals: selectedIndividuals,
       children: children,
-      mutatedChildren: mutatedChildren,
+      mutatedChildren: evaluatedChildren,
       generationBestRoute: generationBestRoute,
     });
   }
