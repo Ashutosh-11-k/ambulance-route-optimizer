@@ -469,6 +469,12 @@ app.get("/api/routes/options/:patientId", async (req, res) => {
         }
       : null;
 
+    if (!bestRoute) {
+      return res.status(500).json({
+        message: "Route optimization failed to find a valid route.",
+      });
+    }
+
     res.status(200).json({
       patient: patient._id,
       totalRoutes: routes.length,
