@@ -202,7 +202,28 @@ function runGenerations(routes, numberOfGenerations) {
       break;
     }
 
-    const generationBestRoute = evaluatedChildren.reduce((best, current) => {
+    // Keep the best individual from the current population
+    const currentBestRoute = populationWithFitness.reduce((best, current) => {
+      return current.fitness > best.fitness ? current : best;
+    });
+
+    // Create the next population using the evaluated children
+    const nextPopulation = [...evaluatedChildren];
+
+    // Find the index of the child with the lowest fitness
+    const worstChildIndex = nextPopulation.reduce(
+      (worstIndex, current, index, array) => {
+        return current.fitness < array[worstIndex].fitness ? index : worstIndex;
+      },
+      0,
+    );
+
+    // Preserve the best current route if it is better than the worst child
+    if (currentBestRoute.fitness > nextPopulation[worstChildIndex].fitness) {
+      nextPopulation[worstChildIndex] = currentBestRoute;
+    }
+
+    const generationBestRoute = nextPopulation.reduce((best, current) => {
       if (best === null || current.fitness > best.fitness) {
         return current;
       }
@@ -214,7 +235,7 @@ function runGenerations(routes, numberOfGenerations) {
       bestRoute = generationBestRoute;
     }
 
-    population = evaluatedChildren;
+    population = nextPopulation;
 
     generations.push({
       generation: generation,
