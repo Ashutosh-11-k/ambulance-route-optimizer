@@ -460,10 +460,15 @@ app.get("/api/routes/options/:patientId", async (req, res) => {
     res.status(200).json({
       patient: patient._id,
       totalRoutes: routes.length,
-      routes: routes,
       numberOfGenerations: numberOfGenerations,
+
       bestRoute: bestRoute,
-      generations: generations,
+
+      optimizationSummary: {
+        generationsCompleted: generations.length,
+        bestDistance: bestRoute ? bestRoute.route.totalDistance : null,
+        bestFitness: bestRoute ? bestRoute.fitness : null,
+      },
     });
   } catch (error) {
     console.error(error);
