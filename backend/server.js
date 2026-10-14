@@ -393,8 +393,14 @@ app.get("/api/routes/options/:patientId", async (req, res) => {
       });
     }
 
-    const ambulances = await Ambulance.find();
-    const hospitals = await Hospital.find();
+    const ambulances = await Ambulance.find({
+      status: "available",
+    });
+
+    const hospitals = await Hospital.find({
+      emergencyAvailable: true,
+      availableBeds: { $gt: 0 },
+    });
 
     const routes = [];
 
@@ -432,6 +438,12 @@ app.get("/api/routes/options/:patientId", async (req, res) => {
       }
     }
 
+    if (routes.length === 0) {
+      return res.status(404).json({
+        message:
+          "No eligible routes found. Check ambulance availability and hospital emergency capacity.",
+      });
+    }
     const numberOfGenerations = 5;
 
     const gaResult = runGenerations(routes, numberOfGenerations);
