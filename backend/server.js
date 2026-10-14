@@ -484,8 +484,10 @@ app.get("/api/routes/options/:patientId", async (req, res) => {
 
       optimizationSummary: {
         generationsCompleted: generations.length,
-        bestDistance: bestRoute ? bestRoute.route.totalDistance : null,
-        bestFitness: bestRoute ? bestRoute.fitness : null,
+        bestDistance: bestRoute.route.totalDistance,
+        bestFitness: bestRoute.fitness,
+        selectionReason:
+          "Selected based on the Genetic Algorithm fitness score, which considers emergency priority and route distance.",
       },
     });
   } catch (error) {
