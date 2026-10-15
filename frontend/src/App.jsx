@@ -1,122 +1,175 @@
 import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
 import './App.css'
+import axios from 'axios'
+import RouteMap from './RouteMap'
 
-function App() {
-  const [count, setCount] = useState(0)
+function App(){
+  const [patientId, setPatientId] = useState('');
+  const [routeResult, setRouteResult] = useState(null)
 
+  async function handleOptimize() {
+  if (!patientId.trim()) {
+      alert('Please enter a patient ID')
+      return
+    }
+
+    try {
+      const response = await axios.get(
+        `http://localhost:5000/api/routes/options/${patientId.trim()}`
+      )
+
+      setRouteResult(response.data)
+      console.log(response.data)
+      alert('Route optimization successful! Check the console.')
+    } catch (error) {
+      console.error(error)
+      alert('Could not optimize route. Check the backend.')
+    }
+  }
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
+    <div className="app-layout">
+      <aside className="sidebar">
+        <div className="brand">
+            <h2>ResQ Route</h2>
+            <p>AMBULANCE OPTIMIZER</p>
         </div>
-        <div>
-          <h1>Get started</h1>
+        <nav className="sidebar-nav">
+          <a href="#dashboard">Dashboard</a>
+          <a href="#route-optimizer">Route Optimizer</a>
+          <a href="#ambulances">Ambulances</a>
+          <a href="#hospitals">Hospitals</a>
+          <a href="#patients">Patients</a>
+        </nav>
+      </aside>
+
+      <main className="main-content" id="dashboard">
+        <header className="topbar">
+          <div>
+            <p>Workspace / Dashboard</p>
+            <h1>Emergency Response Dashboard</h1>
+          </div>
+        </header>
+        <section className="welcome-section">
+          <h2>AI Ambulance Route Optimizer</h2>
           <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
+            Find suitable ambulances and hospitals using Genetic Algorithm
+            based route optimization.
           </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+        </section>
+        <section className="overview-grid">
+          <article className="overview-card">
+            <p>Optimization Engine</p>
+            <h3>Genetic Algorithm</h3>
+          </article>
 
-      <div className="ticks"></div>
+          <article className="overview-card">
+            <p>Route Sequence</p>
+            <h3>Ambulance → Patient → Hospital</h3>
+          </article>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+          <article className="overview-card">
+            <p>Technology</p>
+            <h3>MERN Stack</h3>
+          </article>
+        </section>
+        <section className="panel" id="route-optimizer">
+          <h2>Route Optimizer</h2>
+          <p>Find an eligible ambulance and hospital for a patient.</p>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+          <label htmlFor="patientId">Patient ID</label>
+          <input
+            id="patientId"
+            type="text"
+            placeholder="Enter patient ID"
+            value={patientId}
+            onChange={(event) => setPatientId(event.target.value)}
+          />
+
+          <button type="button" onClick={handleOptimize}>
+            Optimize Route
+          </button>
+        </section>
+        <section className="panel" id="route-map">
+          <h2>Route Visualization</h2>
+          <p>Ambulance → Patient → Hospital</p>
+
+          <div className="map-container">
+            <RouteMap routeResult={routeResult} />
+          </div>
+        </section>
+        <section className="panel results-panel">
+          <h2>Optimization Results</h2>
+          {routeResult && (
+            <div className="optimization-summary">
+              <div>
+                <span>Candidate Routes</span>
+                <strong>{routeResult.totalRoutes}</strong>
+              </div>
+
+              <div>
+                <span>Generations</span>
+                <strong>{routeResult.numberOfGenerations}</strong>
+              </div>
+            </div>
+          )}
+
+          {routeResult ? (
+            <>
+              <h3>Best Route Found</h3>
+
+              <p>
+                <strong>Ambulance:</strong>{' '}
+                {routeResult.bestRoute.ambulanceNumber}
+              </p>
+
+              <p>
+                <strong>Hospital:</strong>{' '}
+                {routeResult.bestRoute.hospitalName}
+              </p>
+
+              <p>
+                <strong>Ambulance to Patient:</strong>{' '}
+                {routeResult.bestRoute.route.ambulanceToPatient} km
+              </p>
+
+              <p>
+                <strong>Patient to Hospital:</strong>{' '}
+                {routeResult.bestRoute.route.patientToHospital} km
+              </p>
+
+              <div className="total-distance">
+                <span>Total Route Distance</span>
+                <strong>
+                  {routeResult.bestRoute.route.totalDistance} km
+                </strong>
+              </div>
+              <p>
+                <strong>Fitness Score:</strong>{' '}
+                {routeResult.bestRoute.fitness}
+              </p>
+
+              <p>
+                <strong>Generations Completed:</strong>{' '}
+                {routeResult.numberOfGenerations}
+              </p>
+            </>
+          ) : (
+            <>
+              <p>No route calculated yet.</p>
+              <p>
+                The selected ambulance, hospital, distance and fitness
+                details will appear here.
+              </p>
+            </>
+          )}
+        </section>
+        <footer className="app-footer">
+          AI Ambulance Route Optimizer
+          <span>Dynamic Route Optimization Using Genetic Algorithm</span>
+        </footer>
+      </main>
+    </div>
   )
 }
 
-export default App
+export default App;

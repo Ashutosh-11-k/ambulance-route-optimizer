@@ -456,8 +456,32 @@ app.get("/api/routes/options/:patientId", async (req, res) => {
       ? {
           ambulance: gaBestRoute.ambulance,
           patient: gaBestRoute.patient,
+          patientLocation: {
+            latitude: patient.location.latitude,
+            longitude: patient.location.longitude,
+          },
           hospital: gaBestRoute.hospital,
+          hospitalLocation: {
+            latitude: hospitals.find(
+              (hospital) =>
+                hospital._id.toString() === gaBestRoute.hospital.toString(),
+            ).location.latitude,
+            longitude: hospitals.find(
+              (hospital) =>
+                hospital._id.toString() === gaBestRoute.hospital.toString(),
+            ).location.longitude,
+          },
           ambulanceNumber: gaBestRoute.ambulanceNumber,
+          ambulanceLocation: {
+            latitude: ambulances.find(
+              (ambulance) =>
+                ambulance._id.toString() === gaBestRoute.ambulance.toString(),
+            ).currentLocation.latitude,
+            longitude: ambulances.find(
+              (ambulance) =>
+                ambulance._id.toString() === gaBestRoute.ambulance.toString(),
+            ).currentLocation.longitude,
+          },
           hospitalName: gaBestRoute.hospitalName,
           route: {
             ambulanceToPatient: gaBestRoute.ambulanceToPatient,
