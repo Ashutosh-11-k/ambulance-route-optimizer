@@ -448,6 +448,8 @@ app.get("/api/routes/options/:patientId", async (req, res) => {
 
     const gaResult = runGenerations(routes, numberOfGenerations);
 
+    const routesWithFitness = calculateFitness(createPopulation(routes));
+
     const generations = gaResult.generations;
 
     const gaBestRoute = gaResult.bestRoute;
@@ -503,6 +505,7 @@ app.get("/api/routes/options/:patientId", async (req, res) => {
       patient: patient._id,
       totalRoutes: routes.length,
       numberOfGenerations: numberOfGenerations,
+      routes: routesWithFitness,
 
       bestRoute: bestRoute,
 
