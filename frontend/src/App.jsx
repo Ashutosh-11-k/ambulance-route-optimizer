@@ -11,6 +11,20 @@ function App() {
   const [selectedPatient, setSelectedPatient] = useState(null)
   const [isOptimizing, setIsOptimizing] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
+  const [ambulances, setAmbulances] = useState([])
+  const [hospitals, setHospitals] = useState([])
+
+  const selectedAmbulance = routeResult
+    ? ambulances.find(
+        (item) => item._id === routeResult.bestRoute.ambulance
+      )
+    : null
+
+  const selectedHospital = routeResult
+    ? hospitals.find(
+        (item) => item._id === routeResult.bestRoute.hospital
+      )
+    : null
 
   useEffect(() => {
     async function fetchPatients() {
@@ -22,7 +36,27 @@ function App() {
       }
     }
 
+    async function fetchAmbulances() {
+      try {
+        const response = await axios.get('http://localhost:5000/api/ambulances')
+        setAmbulances(response.data)
+      } catch (error) {
+        console.error('Failed to fetch ambulances:', error)
+      }
+    }
+
+    async function fetchHospitals() {
+      try {
+        const response = await axios.get('http://localhost:5000/api/hospitals')
+        setHospitals(response.data)
+      } catch (error) {
+        console.error('Failed to fetch hospitals:', error)
+      }
+    }
+
     fetchPatients()
+    fetchAmbulances()
+    fetchHospitals()
   }, [])
 
   async function handleOptimize() {
@@ -183,6 +217,64 @@ function App() {
           {routeResult ? (
             <>
               <h3>Best Route Found</h3>
+              <div className="resource-details-grid">
+                <div className="resource-details-card">
+                  <h3>Ambulance Details</h3>
+
+                  <p>
+                    <strong>Ambulance Number:</strong>{' '}
+                    {routeResult.bestRoute.ambulanceNumber}
+                  </p>
+
+                  <p>
+                    <strong>Location:</strong>{' '}
+                    {routeResult.bestRoute.ambulanceLocation.latitude},{' '}
+                    {routeResult.bestRoute.ambulanceLocation.longitude}
+                  </p>
+                  {selectedAmbulance && (
+                    <>
+                      <p>
+                        <strong>Driver:</strong> {selectedAmbulance.driverName}
+                      </p>
+
+                      <p>
+                        <strong>Status:</strong>{' '}
+                        {selectedAmbulance.status}
+                      </p>
+                    </>
+                  )}
+                </div>
+
+                <div className="resource-details-card">
+                  <h3>Hospital Details</h3>
+
+                  <p>
+                    <strong>Hospital Name:</strong>{' '}
+                    {routeResult.bestRoute.hospitalName}
+                  </p>
+
+                  <p>
+                    <strong>Available Coordinates:</strong>{' '}
+                    {routeResult.bestRoute.hospitalLocation.latitude},{' '}
+                    {routeResult.bestRoute.hospitalLocation.longitude}
+                  </p>
+                  {selectedHospital && (
+                    <>
+                      <p>
+                        <strong>Available Beds:</strong>{' '}
+                        {selectedHospital.availableBeds}
+                      </p>
+
+                      <p>
+                        <strong>Emergency Services:</strong>{' '}
+                        {selectedHospital.emergencyAvailable
+                          ? 'Available'
+                          : 'Unavailable'}
+                      </p>
+                    </>
+                  )}
+                </div>
+              </div>
 
               <p>
                 <strong>Ambulance:</strong>{' '}
