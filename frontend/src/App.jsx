@@ -1,5 +1,5 @@
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './App.css'
 import axios from 'axios'
 import RouteMap from './RouteMap'
@@ -7,12 +7,34 @@ import RouteMap from './RouteMap'
 function App() {
   const [patientId, setPatientId] = useState('')
   const [routeResult, setRouteResult] = useState(null)
+  const [patients, setPatients] = useState([])
+  const [selectedPatient, setSelectedPatient] = useState(null)
+  const [isOptimizing, setIsOptimizing] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
+
+  useEffect(() => {
+    async function fetchPatients() {
+      try {
+        const response = await axios.get('http://localhost:5000/api/patients')
+        setPatients(response.data)
+      } catch (error) {
+        console.error('Failed to fetch patients:', error)
+      }
+    }
+
+    fetchPatients()
+  }, [])
 
   async function handleOptimize() {
     if (!patientId.trim()) {
-      alert('Please enter a patient ID')
+      setErrorMessage('Please select a patient.')
+      setRouteResult(null)
       return
     }
+
+    setIsOptimizing(true)
+    setErrorMessage('')
+    setRouteResult(null)
 
     try {
       const response = await axios.get(
@@ -21,10 +43,13 @@ function App() {
 
       setRouteResult(response.data)
       console.log(response.data)
-      alert('Route optimization successful! Check the console.')
     } catch (error) {
       console.error(error)
-      alert('Could not optimize route. Check the backend.')
+      setErrorMessage(
+        'Could not optimize the route. Please check whether the backend is running and try again.'
+      )
+    } finally {
+      setIsOptimizing(false)
     }
   }
 
@@ -81,19 +106,52 @@ function App() {
         <section className="panel" id="route-optimizer">
           <h2>Route Optimizer</h2>
           <p>Find an eligible ambulance and hospital for a patient.</p>
-
-          <label htmlFor="patientId">Patient ID</label>
-          <input
+          
+          <label htmlFor="patientId">Select Patient</label>
+          <select
             id="patientId"
-            type="text"
-            placeholder="Enter patient ID"
             value={patientId}
-            onChange={(event) => setPatientId(event.target.value)}
-          />
+            onChange={(event) => {
+              const selectedId = event.target.value
+              setPatientId(selectedId)
 
-          <button type="button" onClick={handleOptimize}>
-            Optimize Route
+              const patient = patients.find(
+                (item) => item._id === selectedId
+              )
+
+              setSelectedPatient(patient || null)
+              setRouteResult(null)
+            }}
+          >
+            <option value="">-- Select a patient --</option>
+
+            {patients.map((patient) => (
+              <option key={patient._id} value={patient._id}>
+                {patient.name} — Priority {patient.emergencyPriority}/5
+              </option>
+            ))}
+          </select>
+
+          {selectedPatient && (
+            <div className="patient-priority">
+              <p>
+                <strong>Patient:</strong> {selectedPatient.name}
+              </p>
+              <p>
+                <strong>Emergency Priority:</strong>{' '}
+                {selectedPatient.emergencyPriority}/5
+              </p>
+            </div>
+          )}
+
+          <button onClick={handleOptimize} disabled={isOptimizing}>
+            {isOptimizing ? 'Optimizing Route...' : 'Optimize Route'}
           </button>
+          {errorMessage && (
+            <p className="error-message">
+              {errorMessage}
+            </p>
+          )}
         </section>
 
         <section className="panel" id="route-map">

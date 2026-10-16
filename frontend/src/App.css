@@ -447,3 +447,30 @@
 .routes-table .best-route-row:hover {
   background-color: #bbf7d0;
 }
+/* Selected patient information */
+.patient-priority {
+  margin-top: 16px;
+  padding: 16px;
+  background-color: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+}
+
+.patient-priority p {
+  margin: 6px 0;
+  color: #1e3a8a;
+  font-size: 14px;
+}
+
+.patient-priority strong {
+  color: #1e40af;
+}
+.error-message {
+  margin-top: 12px;
+  padding: 12px;
+  color: #b91c1c;
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  font-size: 14px;
+}
