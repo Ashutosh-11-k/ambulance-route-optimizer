@@ -198,6 +198,9 @@ function App() {
               </option>
             ))}
           </select>
+          {!isRefreshing && !dataErrorMessage && patients.length === 0 && (
+            <p>No patients available. Add a patient, then click Refresh Data.</p>
+          )}
 
           {selectedPatient && (
             <div className="patient-priority">
@@ -211,7 +214,7 @@ function App() {
             </div>
           )}
 
-          <button onClick={handleOptimize} disabled={isOptimizing}>
+          <button onClick={handleOptimize} disabled={isOptimizing || patients.length === 0}>
             {isOptimizing ? 'Optimizing Route...' : 'Optimize Route'}
           </button>
           {errorMessage && (
