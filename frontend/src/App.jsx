@@ -224,6 +224,54 @@ function App() {
           )}
         </section>
 
+        <section className="panel" id="ambulances">
+          <h2>Available Ambulances</h2>
+
+          {ambulances.length === 0 ? (
+            <p>No ambulances available.</p>
+          ) : (
+            <ul>
+              {ambulances.map((ambulance) => (
+                <li key={ambulance._id}>
+                  {ambulance.ambulanceNumber} — {ambulance.status}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <section className="panel" id="hospitals">
+          <h2>Hospitals</h2>
+
+          {hospitals.length === 0 ? (
+            <p>No hospitals available.</p>
+          ) : (
+            <ul>
+              {hospitals.map((hospital) => (
+                <li key={hospital._id}>
+                  {hospital.name} — Available Beds: {hospital.availableBeds}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <section className="panel" id="patients">
+          <h2>Patients</h2>
+
+          {patients.length === 0 ? (
+            <p>No patients available.</p>
+          ) : (
+            <ul>
+              {patients.map((patient) => (
+                <li key={patient._id}>
+                  {patient.name} — Priority: {patient.emergencyPriority}/5
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
         <section className="panel" id="route-map">
           <h2>Route Visualization</h2>
           <p>Ambulance → Patient → Hospital</p>
