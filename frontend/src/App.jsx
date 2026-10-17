@@ -228,32 +228,56 @@ function App() {
           <h2>Available Ambulances</h2>
 
           {ambulances.length === 0 ? (
-            <p>No ambulances available.</p>
-          ) : (
-            <ul>
-              {ambulances.map((ambulance) => (
-                <li key={ambulance._id}>
-                  {ambulance.ambulanceNumber} — {ambulance.status}
-                </li>
-              ))}
-            </ul>
-          )}
+          <p>No ambulances available.</p>
+        ) : (
+          <div className="routes-table-container">
+            <table className="routes-table">
+              <thead>
+                <tr>
+                  <th>Ambulance Number</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {ambulances.map((ambulance) => (
+                  <tr key={ambulance._id}>
+                    <td>{ambulance.ambulanceNumber}</td>
+                    <td>{ambulance.status}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
         </section>
 
         <section className="panel" id="hospitals">
           <h2>Hospitals</h2>
 
           {hospitals.length === 0 ? (
-            <p>No hospitals available.</p>
-          ) : (
-            <ul>
-              {hospitals.map((hospital) => (
-                <li key={hospital._id}>
-                  {hospital.name} — Available Beds: {hospital.availableBeds}
-                </li>
-              ))}
-            </ul>
-          )}
+          <p>No hospitals available.</p>
+        ) : (
+          <div className="routes-table-container">
+            <table className="routes-table">
+              <thead>
+                <tr>
+                  <th>Hospital Name</th>
+                  <th>Available Beds</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {hospitals.map((hospital) => (
+                  <tr key={hospital._id}>
+                    <td>{hospital.name}</td>
+                    <td>{hospital.availableBeds}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
         </section>
 
         <section className="panel" id="patients">
@@ -262,14 +286,27 @@ function App() {
           {patients.length === 0 ? (
             <p>No patients available.</p>
           ) : (
-            <ul>
-              {patients.map((patient) => (
-                <li key={patient._id}>
-                  {patient.name} — Priority: {patient.emergencyPriority}/5
-                </li>
-              ))}
-            </ul>
+            <div className="routes-table-container">
+              <table className="routes-table">
+                <thead>
+                  <tr>
+                    <th>Patient Name</th>
+                    <th>Emergency Priority</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {patients.map((patient) => (
+                    <tr key={patient._id}>
+                      <td>{patient.name}</td>
+                      <td>{patient.emergencyPriority}/5</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
+
         </section>
 
         <section className="panel" id="route-map">
