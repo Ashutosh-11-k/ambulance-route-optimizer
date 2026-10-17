@@ -368,6 +368,22 @@ function App() {
         </section>
 
         <section className="panel results-panel">
+          {routeResult && (
+            <div className="latest-route-summary">
+              <div>
+                <span>Selected Ambulance</span>
+                <strong>{routeResult.bestRoute.ambulanceNumber}</strong>
+              </div>
+              <div>
+                <span>Selected Hospital</span>
+                <strong>{routeResult.bestRoute.hospitalName}</strong>
+              </div>
+              <div>
+                <span>Total Distance</span>
+                <strong>{routeResult.bestRoute.route.totalDistance} km</strong>
+              </div>
+            </div>
+          )}
           <h2>Optimization Results</h2>
 
           {routeResult && (
