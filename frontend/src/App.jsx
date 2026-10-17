@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import './App.css'
 import axios from 'axios'
 import RouteMap from './RouteMap'
@@ -13,6 +12,8 @@ function App() {
   const [errorMessage, setErrorMessage] = useState('')
   const [ambulances, setAmbulances] = useState([])
   const [hospitals, setHospitals] = useState([])
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [dataErrorMessage, setDataErrorMessage] = useState('')
 
   const selectedAmbulance = routeResult
     ? ambulances.find(
@@ -26,38 +27,60 @@ function App() {
       )
     : null
 
-  useEffect(() => {
-    async function fetchPatients() {
-      try {
-        const response = await axios.get('http://localhost:5000/api/patients')
-        setPatients(response.data)
-      } catch (error) {
-        console.error('Failed to fetch patients:', error)
-      }
-    }
+  const fetchDashboardData = useCallback(async () => {
+    setIsRefreshing(true)
+    setDataErrorMessage('')
 
-    async function fetchAmbulances() {
-      try {
-        const response = await axios.get('http://localhost:5000/api/ambulances')
-        setAmbulances(response.data)
-      } catch (error) {
-        console.error('Failed to fetch ambulances:', error)
-      }
-    }
+    try {
+      const [patientsResponse, ambulancesResponse, hospitalsResponse] =
+        await Promise.all([
+          axios.get('http://localhost:5000/api/patients'),
+          axios.get('http://localhost:5000/api/ambulances'),
+          axios.get('http://localhost:5000/api/hospitals'),
+        ])
 
-    async function fetchHospitals() {
-      try {
-        const response = await axios.get('http://localhost:5000/api/hospitals')
-        setHospitals(response.data)
-      } catch (error) {
-        console.error('Failed to fetch hospitals:', error)
-      }
-    }
+      const refreshedPatients = patientsResponse.data
+      const refreshedAmbulances = ambulancesResponse.data
+      const refreshedHospitals = hospitalsResponse.data
 
-    fetchPatients()
-    fetchAmbulances()
-    fetchHospitals()
+      if (
+        !Array.isArray(refreshedPatients) ||
+        !Array.isArray(refreshedAmbulances) ||
+        !Array.isArray(refreshedHospitals)
+      ) {
+        throw new Error('Unexpected dashboard data format')
+      }
+
+      setPatients(refreshedPatients)
+      setAmbulances(refreshedAmbulances)
+      setHospitals(refreshedHospitals)
+
+      setSelectedPatient((current) =>
+        refreshedPatients.find(
+          (patient) => patient._id === current?._id
+        ) || null
+      )
+
+      setPatientId((current) =>
+        refreshedPatients.some((patient) => patient._id === current)
+          ? current
+          : ''
+      )
+
+      setRouteResult(null)
+    } catch (error) {
+      console.error('Failed to refresh dashboard data:', error)
+      setDataErrorMessage(
+        'Could not load dashboard data. Please check the backend and try again.'
+      )
+    } finally {
+      setIsRefreshing(false)
+    }
   }, [])
+
+  useEffect(() => {
+    fetchDashboardData()
+  }, [fetchDashboardData])
 
   async function handleOptimize() {
     if (!patientId.trim()) {
@@ -110,7 +133,17 @@ function App() {
             <p>Workspace / Dashboard</p>
             <h1>Emergency Response Dashboard</h1>
           </div>
+          <button
+            className="refresh-button"
+            onClick={fetchDashboardData}
+            disabled={isRefreshing}
+          >
+            {isRefreshing ? 'Refreshing Data...' : 'Refresh Data'}
+          </button>
         </header>
+        {dataErrorMessage && (
+          <p className="error-message">{dataErrorMessage}</p>
+        )}
 
         <section className="welcome-section">
           <h2>AI Ambulance Route Optimizer</h2>
