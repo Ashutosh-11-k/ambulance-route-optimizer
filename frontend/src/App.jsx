@@ -15,6 +15,20 @@ function App() {
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [dataErrorMessage, setDataErrorMessage] = useState('')
 
+  const availableAmbulances = ambulances.filter(
+    (ambulance) => ambulance.status === 'available'
+  ).length
+
+  const availableBeds = hospitals.reduce(
+    (total, hospital) => total + (hospital.availableBeds || 0),
+    0
+  )
+
+  const emergencyHospitals = hospitals.filter(
+    (hospital) =>
+      hospital.emergencyAvailable && hospital.availableBeds > 0
+  ).length
+
   const selectedAmbulance = routeResult
     ? ambulances.find(
         (item) => item._id === routeResult.bestRoute.ambulance
@@ -155,18 +169,23 @@ function App() {
 
         <section className="overview-grid">
           <article className="overview-card">
-            <p>Optimization Engine</p>
-            <h3>Genetic Algorithm</h3>
+            <p>Available Ambulances</p>
+            <h3>{availableAmbulances} / {ambulances.length}</h3>
           </article>
 
           <article className="overview-card">
-            <p>Route Sequence</p>
-            <h3>Ambulance → Patient → Hospital</h3>
+            <p>Emergency-Ready Hospitals</p>
+            <h3>{emergencyHospitals} / {hospitals.length}</h3>
           </article>
 
           <article className="overview-card">
-            <p>Technology</p>
-            <h3>MERN Stack</h3>
+            <p>Available Hospital Beds</p>
+            <h3>{availableBeds}</h3>
+          </article>
+
+          <article className="overview-card">
+            <p>Total Patients</p>
+            <h3>{patients.length}</h3>
           </article>
         </section>
 
