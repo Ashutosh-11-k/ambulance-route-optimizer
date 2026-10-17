@@ -243,7 +243,11 @@ function App() {
                 {ambulances.map((ambulance) => (
                   <tr key={ambulance._id}>
                     <td>{ambulance.ambulanceNumber}</td>
-                    <td>{ambulance.status}</td>
+                    <td>
+                      <span className={`status-badge status-${ambulance.status}`}>
+                        {ambulance.status}
+                      </span>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -264,14 +268,28 @@ function App() {
                 <tr>
                   <th>Hospital Name</th>
                   <th>Available Beds</th>
+                  <th>Emergency Services</th>
                 </tr>
               </thead>
 
               <tbody>
                 {hospitals.map((hospital) => (
-                  <tr key={hospital._id}>
+                  <tr key={hospital._id}>              
                     <td>{hospital.name}</td>
-                    <td>{hospital.availableBeds}</td>
+                    <td>
+                      <strong>{hospital.availableBeds}</strong>
+                    </td>
+                    <td>
+                      <span
+                        className={`status-badge ${
+                          hospital.emergencyAvailable
+                            ? 'status-available'
+                            : 'status-offline'
+                        }`}
+                      >
+                        {hospital.emergencyAvailable ? 'Available' : 'Unavailable'}
+                      </span>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -298,8 +316,20 @@ function App() {
                 <tbody>
                   {patients.map((patient) => (
                     <tr key={patient._id}>
-                      <td>{patient.name}</td>
-                      <td>{patient.emergencyPriority}/5</td>
+                      <td>{patient.name}</td>     
+                      <td>
+                        <span
+                          className={`status-badge ${
+                            patient.emergencyPriority >= 5
+                              ? 'priority-critical'
+                              : patient.emergencyPriority >= 3
+                                ? 'priority-high'
+                                : 'priority-low'
+                          }`}
+                        >
+                          {patient.emergencyPriority}/5
+                        </span>
+                      </td>
                     </tr>
                   ))}
                 </tbody>

@@ -1,4 +1,26 @@
 
+/* ResQ Route — Dashboard Design System */
+:root {
+  font-family: Inter, "Segoe UI", sans-serif;
+  color: #0f172a;
+  background: #f1f5f9;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  --color-navy: #172554;
+  --color-blue: #2563eb;
+  --color-blue-light: #eff6ff;
+  --color-red: #dc2626;
+  --color-green: #16a34a;
+  --color-text: #0f172a;
+  --color-muted: #64748b;
+  --color-border: #e2e8f0;
+  --color-surface: #ffffff;
+  --color-background: #f1f5f9;
+}
+
 .welcome-card {
   padding: 24px;
   background-color: #f1f5f9;
@@ -19,12 +41,20 @@
   min-height: 100vh;
   background-color: #f4f7fb;
 }
+
 .sidebar {
   width: 250px;
   flex-shrink: 0;
   background-color: #172554;
-  color: white;
+  color: #ffffff;
   padding: 28px 20px;
+
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  align-self: flex-start;
+  box-sizing: border-box;
+  overflow-y: auto;
 }
 
 .brand h2 {
@@ -37,18 +67,19 @@
   font-size: 10px;
   letter-spacing: 1.5px;
 }
-.sidebar-nav {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 45px;
-}
 
 .sidebar-nav a {
+  display: block;
   color: #dbe4f3;
   text-decoration: none;
   padding: 12px;
   border-radius: 8px;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.sidebar-nav a:hover {
+  background-color: #293d70;
+  color: #ffffff;
 }
 
 .sidebar-nav a:hover {
@@ -429,7 +460,8 @@
   font-weight: 600;
 }
 
-.routes-table tbody tr {
+.routes-table tbody tr:hover {
+  background-color: #f1f5f9;
   transition: background-color 0.2s ease;
 }
 
@@ -526,4 +558,72 @@
 .refresh-button:disabled {
   opacity: 0.6;
   cursor: wait;
+}
+
+/* Patient Dropdown */
+#patientId {
+  display: block;
+  width: 100%;
+  max-width: 500px;
+  padding: 13px 16px;
+  margin: 10px 0 18px;
+  font: inherit;
+  font-size: 15px;
+  color: #0f172a;
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+#patientId:hover {
+  border-color: #93aee8;
+}
+
+#patientId:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+/* Ambulance Status Badges */
+.status-badge {
+  display: inline-block;
+  padding: 5px 11px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.status-available {
+  color: #166534;
+  background-color: #dcfce7;
+}
+
+.status-busy {
+  color: #92400e;
+  background-color: #fef3c7;
+}
+
+.status-offline {
+  color: #475569;
+  background-color: #e2e8f0;
+}
+
+/* Patient Priority Badges */
+.priority-critical {
+  color: #991b1b;
+  background-color: #fee2e2;
+}
+
+.priority-high {
+  color: #9a3412;
+  background-color: #ffedd5;
+}
+
+.priority-low {
+  color: #166534;
+  background-color: #dcfce7;
 }
