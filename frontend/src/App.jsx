@@ -14,6 +14,43 @@ function App() {
   const [hospitals, setHospitals] = useState([])
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [dataErrorMessage, setDataErrorMessage] = useState('')
+  const [showAmbulanceForm, setShowAmbulanceForm] = useState(false)
+
+  const [ambulanceForm, setAmbulanceForm] = useState({
+    ambulanceNumber: '',
+    driverName: '',
+    latitude: '',
+    longitude: '',
+    status: 'available',
+  })
+
+  const [ambulanceFormMessage, setAmbulanceFormMessage] = useState('')
+  const [isAddingAmbulance, setIsAddingAmbulance] = useState(false)
+
+  const [showHospitalForm, setShowHospitalForm] = useState(false)
+
+  const [hospitalForm, setHospitalForm] = useState({
+    name: '',
+    latitude: '',
+    longitude: '',
+    availableBeds: '',
+    emergencyAvailable: true,
+  })
+
+  const [hospitalFormMessage, setHospitalFormMessage] = useState('')
+  const [isAddingHospital, setIsAddingHospital] = useState(false)
+
+  const [showPatientForm, setShowPatientForm] = useState(false)
+
+  const [patientForm, setPatientForm] = useState({
+    name: '',
+    latitude: '',
+    longitude: '',
+    emergencyPriority: '3',
+  })
+
+  const [patientFormMessage, setPatientFormMessage] = useState('')
+  const [isAddingPatient, setIsAddingPatient] = useState(false)
 
   const availableAmbulances = ambulances.filter(
     (ambulance) => ambulance.status === 'available'
@@ -116,11 +153,138 @@ function App() {
       console.log(response.data)
     } catch (error) {
       console.error(error)
+
       setErrorMessage(
-        'Could not optimize the route. Please check whether the backend is running and try again.'
+        error.response?.data?.message ||
+          'Could not optimize the route. Please check whether the backend is running and try again.'
       )
     } finally {
       setIsOptimizing(false)
+    }
+  }
+
+  async function handleAddAmbulance(event) {
+    event.preventDefault()
+
+    setIsAddingAmbulance(true)
+    setAmbulanceFormMessage('')
+
+    try {
+      await axios.post('http://localhost:5000/api/ambulances', {
+        ambulanceNumber: ambulanceForm.ambulanceNumber.trim(),
+        driverName: ambulanceForm.driverName.trim(),
+        currentLocation: {
+          latitude: Number(ambulanceForm.latitude),
+          longitude: Number(ambulanceForm.longitude),
+        },
+        status: ambulanceForm.status,
+      })
+
+      setAmbulanceFormMessage('Ambulance added successfully!')
+
+      setAmbulanceForm({
+        ambulanceNumber: '',
+        driverName: '',
+        latitude: '',
+        longitude: '',
+        status: 'available',
+      })
+
+      await fetchDashboardData()
+      setShowAmbulanceForm(false)
+    } catch (error) {
+      console.error('Failed to add ambulance:', error)
+
+      setAmbulanceFormMessage(
+        error.response?.data?.error ||
+          error.response?.data?.message ||
+          'Could not add ambulance. Please try again.'
+      )
+    } finally {
+      setIsAddingAmbulance(false)
+    }
+  }
+
+  async function handleAddHospital(event) {
+    event.preventDefault()
+
+    setIsAddingHospital(true)
+    setHospitalFormMessage('')
+
+    try {
+      await axios.post('http://localhost:5000/api/hospitals', {
+        name: hospitalForm.name.trim(),
+        location: {
+          latitude: Number(hospitalForm.latitude),
+          longitude: Number(hospitalForm.longitude),
+        },
+        availableBeds: Number(hospitalForm.availableBeds),
+        emergencyAvailable: hospitalForm.emergencyAvailable,
+      })
+
+      setHospitalFormMessage('Hospital added successfully!')
+
+      setHospitalForm({
+        name: '',
+        latitude: '',
+        longitude: '',
+        availableBeds: '',
+        emergencyAvailable: true,
+      })
+
+      await fetchDashboardData()
+      setShowHospitalForm(false)
+    } catch (error) {
+      console.error('Failed to add hospital:', error)
+
+      setHospitalFormMessage(
+        error.response?.data?.error ||
+          error.response?.data?.message ||
+          'Could not add hospital. Please try again.'
+      )
+    } finally {
+      setIsAddingHospital(false)
+    }
+  }
+
+  
+  async function handleAddPatient(event) {
+    event.preventDefault()
+
+    setIsAddingPatient(true)
+    setPatientFormMessage('')
+
+    try {
+      await axios.post('http://localhost:5000/api/patients', {
+        name: patientForm.name.trim(),
+        location: {
+          latitude: Number(patientForm.latitude),
+          longitude: Number(patientForm.longitude),
+        },
+        emergencyPriority: Number(patientForm.emergencyPriority),
+      })
+
+      setPatientFormMessage('Patient added successfully!')
+
+      setPatientForm({
+        name: '',
+        latitude: '',
+        longitude: '',
+        emergencyPriority: '3',
+      })
+
+      await fetchDashboardData()
+      setShowPatientForm(false)
+    } catch (error) {
+      console.error('Failed to add patient:', error)
+
+      setPatientFormMessage(
+        error.response?.data?.error ||
+          error.response?.data?.message ||
+          'Could not add patient. Please try again.'
+      )
+    } finally {
+      setIsAddingPatient(false)
     }
   }
 
@@ -244,7 +408,111 @@ function App() {
         </section>
 
         <section className="panel" id="ambulances">
-          <h2>Available Ambulances</h2>
+          <div className="section-header">
+            <h2>Available Ambulances</h2>
+
+            <button
+              type="button"
+              onClick={() => {
+                setShowAmbulanceForm(!showAmbulanceForm)
+                setAmbulanceFormMessage('')
+              }}
+            >
+              {showAmbulanceForm ? 'Cancel' : 'Add Ambulance'}
+            </button>
+          </div>
+
+          {showAmbulanceForm && (
+            <form onSubmit={handleAddAmbulance} className="resource-form">
+              <label htmlFor="ambulanceNumber">Ambulance Number</label>
+              <input
+                id="ambulanceNumber"
+                value={ambulanceForm.ambulanceNumber}
+                onChange={(event) =>
+                  setAmbulanceForm({
+                    ...ambulanceForm,
+                    ambulanceNumber: event.target.value,
+                  })
+                }
+                placeholder="e.g. MH12AB1234"
+                required
+              />
+
+              <label htmlFor="driverName">Driver Name</label>
+              <input
+                id="driverName"
+                value={ambulanceForm.driverName}
+                onChange={(event) =>
+                  setAmbulanceForm({
+                    ...ambulanceForm,
+                    driverName: event.target.value,
+                  })
+                }
+                placeholder="Enter driver name"
+                required
+              />
+
+              <label htmlFor="ambulanceLatitude">Latitude</label>
+              <input
+                id="ambulanceLatitude"
+                type="number"
+                step="any"
+                min="-90"
+                max="90"
+                value={ambulanceForm.latitude}
+                onChange={(event) =>
+                  setAmbulanceForm({
+                    ...ambulanceForm,
+                    latitude: event.target.value,
+                  })
+                }
+                placeholder="e.g. 18.5204"
+                required
+              />
+
+              <label htmlFor="ambulanceLongitude">Longitude</label>
+              <input
+                id="ambulanceLongitude"
+                type="number"
+                step="any"
+                min="-180"
+                max="180"
+                value={ambulanceForm.longitude}
+                onChange={(event) =>
+                  setAmbulanceForm({
+                    ...ambulanceForm,
+                    longitude: event.target.value,
+                  })
+                }
+                placeholder="e.g. 73.8567"
+                required
+              />
+
+              <label htmlFor="ambulanceStatus">Status</label>
+              <select
+                id="ambulanceStatus"
+                value={ambulanceForm.status}
+                onChange={(event) =>
+                  setAmbulanceForm({
+                    ...ambulanceForm,
+                    status: event.target.value,
+                  })
+                }
+              >
+                <option value="available">Available</option>
+                <option value="busy">Busy</option>
+                <option value="offline">Offline</option>
+              </select>
+
+              <button type="submit" disabled={isAddingAmbulance}>
+                {isAddingAmbulance ? 'Adding Ambulance...' : 'Save Ambulance'}
+              </button>
+
+              {ambulanceFormMessage && (
+                <p className="form-message">{ambulanceFormMessage}</p>
+              )}
+            </form>
+          )}
 
           {ambulances.length === 0 ? (
           <p>No ambulances available.</p>
@@ -276,7 +544,101 @@ function App() {
         </section>
 
         <section className="panel" id="hospitals">
-          <h2>Hospitals</h2>
+          <div className="section-header">
+            <h2>Hospitals</h2>
+
+            <button
+              type="button"
+              onClick={() => {
+                setShowHospitalForm(!showHospitalForm)
+                setHospitalFormMessage('')
+              }}
+            >
+              {showHospitalForm ? 'Cancel' : 'Add Hospital'}
+            </button>
+          </div>
+
+          {showHospitalForm && (
+            <form onSubmit={handleAddHospital} className="resource-form">
+              <label htmlFor="hospitalName">Hospital Name</label>
+              <input
+                id="hospitalName"
+                value={hospitalForm.name}
+                onChange={(event) =>
+                  setHospitalForm({ ...hospitalForm, name: event.target.value })
+                }
+                placeholder="Enter hospital name"
+                required
+              />
+
+              <label htmlFor="hospitalLatitude">Latitude</label>
+              <input
+                id="hospitalLatitude"
+                type="number"
+                step="any"
+                min="-90"
+                max="90"
+                value={hospitalForm.latitude}
+                onChange={(event) =>
+                  setHospitalForm({ ...hospitalForm, latitude: event.target.value })
+                }
+                placeholder="e.g. 18.5314"
+                required
+              />
+
+              <label htmlFor="hospitalLongitude">Longitude</label>
+              <input
+                id="hospitalLongitude"
+                type="number"
+                step="any"
+                min="-180"
+                max="180"
+                value={hospitalForm.longitude}
+                onChange={(event) =>
+                  setHospitalForm({ ...hospitalForm, longitude: event.target.value })
+                }
+                placeholder="e.g. 73.8446"
+                required
+              />
+
+              <label htmlFor="availableBeds">Available Beds</label>
+              <input
+                id="availableBeds"
+                type="number"
+                min="0"
+                step="1"
+                value={hospitalForm.availableBeds}
+                onChange={(event) =>
+                  setHospitalForm({ ...hospitalForm, availableBeds: event.target.value })
+                }
+                placeholder="Enter available beds"
+                required
+              />
+
+              <label htmlFor="emergencyAvailable">Emergency Services</label>
+              <select
+                id="emergencyAvailable"
+                value={String(hospitalForm.emergencyAvailable)}
+                onChange={(event) =>
+                  setHospitalForm({
+                    ...hospitalForm,
+                    emergencyAvailable: event.target.value === 'true',
+                  })
+                }
+              >
+                <option value="true">Available</option>
+                <option value="false">Unavailable</option>
+              </select>
+
+              <button type="submit" disabled={isAddingHospital}>
+                {isAddingHospital ? 'Adding Hospital...' : 'Save Hospital'}
+              </button>
+
+              {hospitalFormMessage && (
+                <p className="form-message">{hospitalFormMessage}</p>
+              )}
+            </form>
+          )}
 
           {hospitals.length === 0 ? (
           <p>No hospitals available.</p>
@@ -318,7 +680,90 @@ function App() {
         </section>
 
         <section className="panel" id="patients">
-          <h2>Patients</h2>
+          <div className="section-header">
+            <h2>Patients</h2>
+
+            <button
+              type="button"
+              onClick={() => {
+                setShowPatientForm(!showPatientForm)
+                setPatientFormMessage('')
+              }}
+            >
+              {showPatientForm ? 'Cancel' : 'Add Patient'}
+            </button>
+          </div>
+
+          {showPatientForm && (
+            <form onSubmit={handleAddPatient} className="resource-form">
+              <label htmlFor="patientName">Patient Name</label>
+              <input
+                id="patientName"
+                value={patientForm.name}
+                onChange={(event) =>
+                  setPatientForm({ ...patientForm, name: event.target.value })
+                }
+                placeholder="Enter patient name"
+                required
+              />
+
+              <label htmlFor="patientLatitude">Latitude</label>
+              <input
+                id="patientLatitude"
+                type="number"
+                step="any"
+                min="-90"
+                max="90"
+                value={patientForm.latitude}
+                onChange={(event) =>
+                  setPatientForm({ ...patientForm, latitude: event.target.value })
+                }
+                placeholder="e.g. 18.5204"
+                required
+              />
+
+              <label htmlFor="patientLongitude">Longitude</label>
+              <input
+                id="patientLongitude"
+                type="number"
+                step="any"
+                min="-180"
+                max="180"
+                value={patientForm.longitude}
+                onChange={(event) =>
+                  setPatientForm({ ...patientForm, longitude: event.target.value })
+                }
+                placeholder="e.g. 73.8567"
+                required
+              />
+
+              <label htmlFor="emergencyPriority">Emergency Priority (1–5)</label>
+              <select
+                id="emergencyPriority"
+                value={patientForm.emergencyPriority}
+                onChange={(event) =>
+                  setPatientForm({
+                    ...patientForm,
+                    emergencyPriority: event.target.value,
+                  })
+                }
+              >
+                <option value="1">1 — Lowest</option>
+                <option value="2">2 — Low</option>
+                <option value="3">3 — Medium</option>
+                <option value="4">4 — High</option>
+                <option value="5">5 — Highest</option>
+              </select>
+
+              <button type="submit" disabled={isAddingPatient}>
+                {isAddingPatient ? 'Adding Patient...' : 'Save Patient'}
+              </button>
+
+              {patientFormMessage && (
+                <p className="form-message">{patientFormMessage}</p>
+              )}
+            </form>
+          )}
 
           {patients.length === 0 ? (
             <p>No patients available.</p>

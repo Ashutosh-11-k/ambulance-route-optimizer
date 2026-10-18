@@ -32,6 +32,30 @@ const hospitalIcon = new L.DivIcon({
   iconAnchor: [16, 16],
 })
 
+function getValidPosition(location) {
+  if (
+    !location ||
+    !Number.isFinite(Number(location.latitude)) ||
+    !Number.isFinite(Number(location.longitude))
+  ) {
+    return null
+  }
+
+  const latitude = Number(location.latitude)
+  const longitude = Number(location.longitude)
+
+  if (
+    latitude < -90 ||
+    latitude > 90 ||
+    longitude < -180 ||
+    longitude > 180
+  ) {
+    return null
+  }
+
+  return [latitude, longitude]
+}
+
 function FitRoute({ positions }) {
   const map = useMap()
 
@@ -52,36 +76,29 @@ function RouteMap({ routeResult }) {
 
   const bestRoute = routeResult?.bestRoute
 
-  const ambulancePosition = bestRoute
-    ? [
-        bestRoute.ambulanceLocation.latitude,
-        bestRoute.ambulanceLocation.longitude,
-      ]
-    : null
+  const ambulancePosition = getValidPosition(
+    bestRoute?.ambulanceLocation,
+  )
 
-  const patientPosition = bestRoute
-    ? [
-        bestRoute.patientLocation.latitude,
-        bestRoute.patientLocation.longitude,
-      ]
-    : null
+  const patientPosition = getValidPosition(
+    bestRoute?.patientLocation,
+  )
 
-  const hospitalPosition = bestRoute
-    ? [
-        bestRoute.hospitalLocation.latitude,
-        bestRoute.hospitalLocation.longitude,
-      ]
-    : null
+  const hospitalPosition = getValidPosition(
+    bestRoute?.hospitalLocation,
+  )
+
+  const hasValidLocations =
+    ambulancePosition &&
+    patientPosition &&
+    hospitalPosition
 
   useEffect(() => {
-    if (
-      !ambulancePosition ||
-      !patientPosition ||
-      !hospitalPosition
-    ) {
+    if (!hasValidLocations) {
       setRoadRoute(null)
       setRouteInfo(null)
       setRouteError('')
+      setLoading(false)
       return
     }
 
@@ -125,7 +142,7 @@ function RouteMap({ routeResult }) {
 
         const route = data.routes[0]
 
-        // Leaflet uses latitude,longitude order.
+        // Leaflet expects latitude,longitude order.
         const roadPositions = route.geometry.coordinates.map(
           ([longitude, latitude]) => [latitude, longitude],
         )
@@ -164,6 +181,14 @@ function RouteMap({ routeResult }) {
 
   if (!bestRoute) {
     return <p>Optimize a route to display the map.</p>
+  }
+
+  if (!hasValidLocations) {
+    return (
+      <p className="route-warning">
+        Map locations are missing or invalid. Please calculate the route again.
+      </p>
+    )
   }
 
   const markerPositions = [
@@ -205,9 +230,7 @@ function RouteMap({ routeResult }) {
 
           <div>
             <span>Estimated Driving Time</span>
-            <strong>
-              {Math.round(routeInfo.durationMinutes)} min
-            </strong>
+            <strong>{Math.round(routeInfo.durationMinutes)} min</strong>
           </div>
         </div>
       )}
