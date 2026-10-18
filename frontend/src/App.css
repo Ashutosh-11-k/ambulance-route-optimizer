@@ -745,3 +745,24 @@
     padding: 16px;
   }
 }
+/* Delete resource button */
+.delete-button {
+  padding: 8px 14px;
+  border: 1px solid #fecaca;
+  border-radius: 7px;
+  background: #fff1f2;
+  color: #be123c;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.delete-button:hover:not(:disabled) {
+  background: #ffe4e6;
+}
+
+.delete-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

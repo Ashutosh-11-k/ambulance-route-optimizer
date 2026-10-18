@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react'
 import './App.css'
 import axios from 'axios'
@@ -14,8 +15,8 @@ function App() {
   const [hospitals, setHospitals] = useState([])
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [dataErrorMessage, setDataErrorMessage] = useState('')
-  const [showAmbulanceForm, setShowAmbulanceForm] = useState(false)
 
+  const [showAmbulanceForm, setShowAmbulanceForm] = useState(false)
   const [ambulanceForm, setAmbulanceForm] = useState({
     ambulanceNumber: '',
     driverName: '',
@@ -23,12 +24,10 @@ function App() {
     longitude: '',
     status: 'available',
   })
-
   const [ambulanceFormMessage, setAmbulanceFormMessage] = useState('')
   const [isAddingAmbulance, setIsAddingAmbulance] = useState(false)
 
   const [showHospitalForm, setShowHospitalForm] = useState(false)
-
   const [hospitalForm, setHospitalForm] = useState({
     name: '',
     latitude: '',
@@ -36,21 +35,22 @@ function App() {
     availableBeds: '',
     emergencyAvailable: true,
   })
-
   const [hospitalFormMessage, setHospitalFormMessage] = useState('')
   const [isAddingHospital, setIsAddingHospital] = useState(false)
 
   const [showPatientForm, setShowPatientForm] = useState(false)
-
   const [patientForm, setPatientForm] = useState({
     name: '',
     latitude: '',
     longitude: '',
     emergencyPriority: '3',
   })
-
   const [patientFormMessage, setPatientFormMessage] = useState('')
   const [isAddingPatient, setIsAddingPatient] = useState(false)
+
+  // Delete feature state
+  const [deletingResource, setDeletingResource] = useState('')
+  const [deleteMessage, setDeleteMessage] = useState('')
 
   const availableAmbulances = ambulances.filter(
     (ambulance) => ambulance.status === 'available'
@@ -247,7 +247,6 @@ function App() {
     }
   }
 
-  
   async function handleAddPatient(event) {
     event.preventDefault()
 
@@ -288,6 +287,50 @@ function App() {
     }
   }
 
+  // Delete an ambulance, hospital, or patient
+  async function handleDeleteResource(type, id, name) {
+    const confirmed = window.confirm(
+      `Are you sure you want to delete "${name}"? This action cannot be undone.`
+    )
+
+    if (!confirmed) {
+      return
+    }
+
+    const resourceNames = {
+      ambulances: 'Ambulance',
+      hospitals: 'Hospital',
+      patients: 'Patient',
+    }
+
+    const resourceKey = `${type}-${id}`
+
+    setDeletingResource(resourceKey)
+    setDeleteMessage('')
+
+    try {
+      await axios.delete(
+        `http://localhost:5000/api/${type}/${id}`
+      )
+
+      setDeleteMessage(
+        `${resourceNames[type]} deleted successfully.`
+      )
+
+      // Refresh the tables and summary cards
+      await fetchDashboardData()
+    } catch (error) {
+      console.error(`Failed to delete ${type}:`, error)
+
+      setDeleteMessage(
+        error.response?.data?.message ||
+          `Could not delete ${resourceNames[type]}. Please try again.`
+      )
+    } finally {
+      setDeletingResource('')
+    }
+  }
+
   return (
     <div className="app-layout">
       <aside className="sidebar">
@@ -311,6 +354,7 @@ function App() {
             <p>Workspace / Dashboard</p>
             <h1>Emergency Response Dashboard</h1>
           </div>
+
           <button
             className="refresh-button"
             onClick={fetchDashboardData}
@@ -319,8 +363,15 @@ function App() {
             {isRefreshing ? 'Refreshing Data...' : 'Refresh Data'}
           </button>
         </header>
+
         {dataErrorMessage && (
           <p className="error-message">{dataErrorMessage}</p>
+        )}
+
+        {deleteMessage && (
+          <p className="form-message" role="status">
+            {deleteMessage}
+          </p>
         )}
 
         <section className="welcome-section">
@@ -356,7 +407,7 @@ function App() {
         <section className="panel" id="route-optimizer">
           <h2>Route Optimizer</h2>
           <p>Find an eligible ambulance and hospital for a patient.</p>
-          
+
           <label htmlFor="patientId">Select Patient</label>
           <select
             id="patientId"
@@ -381,6 +432,7 @@ function App() {
               </option>
             ))}
           </select>
+
           {!isRefreshing && !dataErrorMessage && patients.length === 0 && (
             <p>No patients available. Add a patient, then click Refresh Data.</p>
           )}
@@ -397,16 +449,19 @@ function App() {
             </div>
           )}
 
-          <button onClick={handleOptimize} disabled={isOptimizing || patients.length === 0}>
+          <button
+            onClick={handleOptimize}
+            disabled={isOptimizing || patients.length === 0}
+          >
             {isOptimizing ? 'Optimizing Route...' : 'Optimize Route'}
           </button>
+
           {errorMessage && (
-            <p className="error-message">
-              {errorMessage}
-            </p>
+            <p className="error-message">{errorMessage}</p>
           )}
         </section>
 
+        {/* Ambulances */}
         <section className="panel" id="ambulances">
           <div className="section-header">
             <h2>Available Ambulances</h2>
@@ -515,34 +570,56 @@ function App() {
           )}
 
           {ambulances.length === 0 ? (
-          <p>No ambulances available.</p>
-        ) : (
-          <div className="routes-table-container">
-            <table className="routes-table">
-              <thead>
-                <tr>
-                  <th>Ambulance Number</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {ambulances.map((ambulance) => (
-                  <tr key={ambulance._id}>
-                    <td>{ambulance.ambulanceNumber}</td>
-                    <td>
-                      <span className={`status-badge status-${ambulance.status}`}>
-                        {ambulance.status}
-                      </span>
-                    </td>
+            <p>No ambulances available.</p>
+          ) : (
+            <div className="routes-table-container">
+              <table className="routes-table">
+                <thead>
+                  <tr>
+                    <th>Ambulance Number</th>
+                    <th>Status</th>
+                    <th>Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                </thead>
+
+                <tbody>
+                  {ambulances.map((ambulance) => (
+                    <tr key={ambulance._id}>
+                      <td>{ambulance.ambulanceNumber}</td>
+                      <td>
+                        <span className={`status-badge status-${ambulance.status}`}>
+                          {ambulance.status}
+                        </span>
+                      </td>
+                      <td>
+                        <button
+                          type="button"
+                          className="delete-button"
+                          onClick={() =>
+                            handleDeleteResource(
+                              'ambulances',
+                              ambulance._id,
+                              ambulance.ambulanceNumber
+                            )
+                          }
+                          disabled={
+                            deletingResource === `ambulances-${ambulance._id}`
+                          }
+                        >
+                          {deletingResource === `ambulances-${ambulance._id}`
+                            ? 'Deleting...'
+                            : 'Delete'}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </section>
 
+        {/* Hospitals */}
         <section className="panel" id="hospitals">
           <div className="section-header">
             <h2>Hospitals</h2>
@@ -580,7 +657,10 @@ function App() {
                 max="90"
                 value={hospitalForm.latitude}
                 onChange={(event) =>
-                  setHospitalForm({ ...hospitalForm, latitude: event.target.value })
+                  setHospitalForm({
+                    ...hospitalForm,
+                    latitude: event.target.value,
+                  })
                 }
                 placeholder="e.g. 18.5314"
                 required
@@ -595,7 +675,10 @@ function App() {
                 max="180"
                 value={hospitalForm.longitude}
                 onChange={(event) =>
-                  setHospitalForm({ ...hospitalForm, longitude: event.target.value })
+                  setHospitalForm({
+                    ...hospitalForm,
+                    longitude: event.target.value,
+                  })
                 }
                 placeholder="e.g. 73.8446"
                 required
@@ -609,7 +692,10 @@ function App() {
                 step="1"
                 value={hospitalForm.availableBeds}
                 onChange={(event) =>
-                  setHospitalForm({ ...hospitalForm, availableBeds: event.target.value })
+                  setHospitalForm({
+                    ...hospitalForm,
+                    availableBeds: event.target.value,
+                  })
                 }
                 placeholder="Enter available beds"
                 required
@@ -641,44 +727,68 @@ function App() {
           )}
 
           {hospitals.length === 0 ? (
-          <p>No hospitals available.</p>
-        ) : (
-          <div className="routes-table-container">
-            <table className="routes-table">
-              <thead>
-                <tr>
-                  <th>Hospital Name</th>
-                  <th>Available Beds</th>
-                  <th>Emergency Services</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {hospitals.map((hospital) => (
-                  <tr key={hospital._id}>              
-                    <td>{hospital.name}</td>
-                    <td>
-                      <strong>{hospital.availableBeds}</strong>
-                    </td>
-                    <td>
-                      <span
-                        className={`status-badge ${
-                          hospital.emergencyAvailable
-                            ? 'status-available'
-                            : 'status-offline'
-                        }`}
-                      >
-                        {hospital.emergencyAvailable ? 'Available' : 'Unavailable'}
-                      </span>
-                    </td>
+            <p>No hospitals available.</p>
+          ) : (
+            <div className="routes-table-container">
+              <table className="routes-table">
+                <thead>
+                  <tr>
+                    <th>Hospital Name</th>
+                    <th>Available Beds</th>
+                    <th>Emergency Services</th>
+                    <th>Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                </thead>
+
+                <tbody>
+                  {hospitals.map((hospital) => (
+                    <tr key={hospital._id}>
+                      <td>{hospital.name}</td>
+                      <td>
+                        <strong>{hospital.availableBeds}</strong>
+                      </td>
+                      <td>
+                        <span
+                          className={`status-badge ${
+                            hospital.emergencyAvailable
+                              ? 'status-available'
+                              : 'status-offline'
+                          }`}
+                        >
+                          {hospital.emergencyAvailable
+                            ? 'Available'
+                            : 'Unavailable'}
+                        </span>
+                      </td>
+                      <td>
+                        <button
+                          type="button"
+                          className="delete-button"
+                          onClick={() =>
+                            handleDeleteResource(
+                              'hospitals',
+                              hospital._id,
+                              hospital.name
+                            )
+                          }
+                          disabled={
+                            deletingResource === `hospitals-${hospital._id}`
+                          }
+                        >
+                          {deletingResource === `hospitals-${hospital._id}`
+                            ? 'Deleting...'
+                            : 'Delete'}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </section>
 
+        {/* Patients */}
         <section className="panel" id="patients">
           <div className="section-header">
             <h2>Patients</h2>
@@ -716,7 +826,10 @@ function App() {
                 max="90"
                 value={patientForm.latitude}
                 onChange={(event) =>
-                  setPatientForm({ ...patientForm, latitude: event.target.value })
+                  setPatientForm({
+                    ...patientForm,
+                    latitude: event.target.value,
+                  })
                 }
                 placeholder="e.g. 18.5204"
                 required
@@ -731,7 +844,10 @@ function App() {
                 max="180"
                 value={patientForm.longitude}
                 onChange={(event) =>
-                  setPatientForm({ ...patientForm, longitude: event.target.value })
+                  setPatientForm({
+                    ...patientForm,
+                    longitude: event.target.value,
+                  })
                 }
                 placeholder="e.g. 73.8567"
                 required
@@ -774,13 +890,14 @@ function App() {
                   <tr>
                     <th>Patient Name</th>
                     <th>Emergency Priority</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
 
                 <tbody>
                   {patients.map((patient) => (
                     <tr key={patient._id}>
-                      <td>{patient.name}</td>     
+                      <td>{patient.name}</td>
                       <td>
                         <span
                           className={`status-badge ${
@@ -794,15 +911,35 @@ function App() {
                           {patient.emergencyPriority}/5
                         </span>
                       </td>
+                      <td>
+                        <button
+                          type="button"
+                          className="delete-button"
+                          onClick={() =>
+                            handleDeleteResource(
+                              'patients',
+                              patient._id,
+                              patient.name
+                            )
+                          }
+                          disabled={
+                            deletingResource === `patients-${patient._id}`
+                          }
+                        >
+                          {deletingResource === `patients-${patient._id}`
+                            ? 'Deleting...'
+                            : 'Delete'}
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           )}
-
         </section>
 
+        {/* Route Map */}
         <section className="panel" id="route-map">
           <h2>Route Visualization</h2>
           <p>Ambulance → Patient → Hospital</p>
@@ -812,6 +949,7 @@ function App() {
           </div>
         </section>
 
+        {/* Optimization Results */}
         <section className="panel results-panel">
           {routeResult && (
             <div className="latest-route-summary">
@@ -829,6 +967,7 @@ function App() {
               </div>
             </div>
           )}
+
           <h2>Optimization Results</h2>
 
           {routeResult && (
@@ -848,6 +987,7 @@ function App() {
           {routeResult ? (
             <>
               <h3>Best Route Found</h3>
+
               <div className="resource-details-grid">
                 <div className="resource-details-card">
                   <h3>Ambulance Details</h3>
@@ -862,6 +1002,7 @@ function App() {
                     {routeResult.bestRoute.ambulanceLocation.latitude},{' '}
                     {routeResult.bestRoute.ambulanceLocation.longitude}
                   </p>
+
                   {selectedAmbulance && (
                     <>
                       <p>
@@ -869,8 +1010,7 @@ function App() {
                       </p>
 
                       <p>
-                        <strong>Status:</strong>{' '}
-                        {selectedAmbulance.status}
+                        <strong>Status:</strong> {selectedAmbulance.status}
                       </p>
                     </>
                   )}
@@ -889,6 +1029,7 @@ function App() {
                     {routeResult.bestRoute.hospitalLocation.latitude},{' '}
                     {routeResult.bestRoute.hospitalLocation.longitude}
                   </p>
+
                   {selectedHospital && (
                     <>
                       <p>
@@ -944,7 +1085,6 @@ function App() {
                 {routeResult.numberOfGenerations}
               </p>
 
-              {/* Candidate route comparison table */}
               <h3>All Candidate Routes</h3>
 
               {routeResult.routes && routeResult.routes.length > 0 ? (
