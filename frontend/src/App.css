@@ -672,3 +672,76 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Resource management forms */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.section-header h2 {
+  margin: 0;
+}
+
+.resource-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 18px;
+  padding: 22px;
+  margin-bottom: 24px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+
+.resource-form label {
+  align-self: end;
+  font-size: 14px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.resource-form input,
+.resource-form select {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 11px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  color: #1e293b;
+  font: inherit;
+}
+
+.resource-form input:focus,
+.resource-form select:focus {
+  outline: 2px solid #93c5fd;
+  border-color: #2563eb;
+}
+
+.resource-form button[type="submit"] {
+  justify-self: start;
+  margin-top: 6px;
+}
+
+.form-message {
+  align-self: center;
+  margin: 6px 0;
+  font-size: 14px;
+}
+
+@media (max-width: 700px) {
+  .section-header {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .resource-form {
+    grid-template-columns: 1fr;
+    padding: 16px;
+  }
+}
