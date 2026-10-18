@@ -385,6 +385,12 @@ app.get("/api/routes/options/:patientId", async (req, res) => {
   try {
     const { patientId } = req.params;
 
+    if (!mongoose.isValidObjectId(patientId)) {
+      return res.status(400).json({
+        message: "Invalid patient ID format",
+      });
+    }
+
     const patient = await Patient.findById(patientId);
 
     if (!patient) {
@@ -532,6 +538,12 @@ app.get("/api/routes/shortest/:patientId", async (req, res) => {
   try {
     const { patientId } = req.params;
 
+    if (!mongoose.isValidObjectId(patientId)) {
+      return res.status(400).json({
+        message: "Invalid patient ID format",
+      });
+    }
+
     const patient = await Patient.findById(patientId);
 
     if (!patient) {
@@ -571,7 +583,7 @@ app.get("/api/routes/shortest/:patientId", async (req, res) => {
 
         if (
           shortestRoute === null ||
-          totalDistance < shortestRoute.totalDistance
+          totalDistance < shortestRoute.route.totalDistance
         ) {
           shortestRoute = {
             ambulance: ambulance._id,
