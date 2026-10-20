@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react'
 import './App.css'
 import axios from 'axios'
@@ -51,6 +50,12 @@ function App() {
   // Delete feature state
   const [deletingResource, setDeletingResource] = useState('')
   const [deleteMessage, setDeleteMessage] = useState('')
+
+  // Edit feature state
+  const [editingResource, setEditingResource] = useState(null)
+  const [editForm, setEditForm] = useState({})
+  const [editMessage, setEditMessage] = useState('')
+  const [isSavingEdit, setIsSavingEdit] = useState(false)
 
   const availableAmbulances = ambulances.filter(
     (ambulance) => ambulance.status === 'available'
@@ -287,15 +292,125 @@ function App() {
     }
   }
 
-  // Delete an ambulance, hospital, or patient
+  // Start editing a resource and fill the form with its current data.
+  function handleStartEdit(type, resource) {
+    setEditingResource({ type, id: resource._id })
+    setEditMessage('')
+
+    if (type === 'ambulances') {
+      setEditForm({
+        ambulanceNumber: resource.ambulanceNumber || '',
+        driverName: resource.driverName || '',
+        latitude: String(resource.currentLocation?.latitude ?? ''),
+        longitude: String(resource.currentLocation?.longitude ?? ''),
+        status: resource.status || 'available',
+      })
+    } else if (type === 'hospitals') {
+      setEditForm({
+        name: resource.name || '',
+        latitude: String(resource.location?.latitude ?? ''),
+        longitude: String(resource.location?.longitude ?? ''),
+        availableBeds: String(resource.availableBeds ?? 0),
+        emergencyAvailable: Boolean(resource.emergencyAvailable),
+      })
+    } else {
+      setEditForm({
+        name: resource.name || '',
+        latitude: String(resource.location?.latitude ?? ''),
+        longitude: String(resource.location?.longitude ?? ''),
+        emergencyPriority: String(resource.emergencyPriority ?? 3),
+      })
+    }
+  }
+
+  // Save the edited resource using the existing PUT API.
+  async function handleSaveEdit(event) {
+    event.preventDefault()
+
+    if (!editingResource) return
+
+    const { type, id } = editingResource
+
+    const resourceNames = {
+      ambulances: 'Ambulance',
+      hospitals: 'Hospital',
+      patients: 'Patient',
+    }
+
+    let updatedData
+
+    if (type === 'ambulances') {
+      updatedData = {
+        ambulanceNumber: editForm.ambulanceNumber.trim(),
+        driverName: editForm.driverName.trim(),
+        currentLocation: {
+          latitude: Number(editForm.latitude),
+          longitude: Number(editForm.longitude),
+        },
+        status: editForm.status,
+      }
+    } else if (type === 'hospitals') {
+      updatedData = {
+        name: editForm.name.trim(),
+        location: {
+          latitude: Number(editForm.latitude),
+          longitude: Number(editForm.longitude),
+        },
+        availableBeds: Number(editForm.availableBeds),
+        emergencyAvailable: editForm.emergencyAvailable,
+      }
+    } else {
+      updatedData = {
+        name: editForm.name.trim(),
+        location: {
+          latitude: Number(editForm.latitude),
+          longitude: Number(editForm.longitude),
+        },
+        emergencyPriority: Number(editForm.emergencyPriority),
+      }
+    }
+
+    setIsSavingEdit(true)
+    setEditMessage('')
+
+    try {
+      await axios.put(
+        `http://localhost:5000/api/${type}/${id}`,
+        updatedData
+      )
+
+      setEditMessage(`${resourceNames[type]} updated successfully.`)
+      setEditingResource(null)
+      setEditForm({})
+
+      await fetchDashboardData()
+    } catch (error) {
+      console.error(`Failed to update ${type}:`, error)
+
+      setEditMessage(
+        error.response?.data?.error ||
+          error.response?.data?.message ||
+          `Could not update ${resourceNames[type]}. Please try again.`
+      )
+    } finally {
+      setIsSavingEdit(false)
+    }
+  }
+
+  // Cancel editing without saving.
+  function handleCancelEdit() {
+    setEditingResource(null)
+    setEditForm({})
+    setEditMessage('')
+  }
+
+  // Delete an ambulance, hospital, or patient.
   async function handleDeleteResource(type, id, name) {
     const confirmed = window.confirm(
       `Are you sure you want to delete "${name}"? This action cannot be undone.`
     )
 
-    if (!confirmed) {
-      return
-    }
+    if (!confirmed) return
 
     const resourceNames = {
       ambulances: 'Ambulance',
@@ -317,7 +432,13 @@ function App() {
         `${resourceNames[type]} deleted successfully.`
       )
 
-      // Refresh the tables and summary cards
+      if (
+        editingResource?.type === type &&
+        editingResource?.id === id
+      ) {
+        handleCancelEdit()
+      }
+
       await fetchDashboardData()
     } catch (error) {
       console.error(`Failed to delete ${type}:`, error)
@@ -371,6 +492,12 @@ function App() {
         {deleteMessage && (
           <p className="form-message" role="status">
             {deleteMessage}
+          </p>
+        )}
+
+        {editMessage && (
+          <p className="form-message" role="status">
+            {editMessage}
           </p>
         )}
 
@@ -591,7 +718,17 @@ function App() {
                           {ambulance.status}
                         </span>
                       </td>
-                      <td>
+                      <td className="resource-actions">
+                        <button
+                          type="button"
+                          className="edit-button"
+                          onClick={() =>
+                            handleStartEdit('ambulances', ambulance)
+                          }
+                        >
+                          Edit
+                        </button>
+
                         <button
                           type="button"
                           className="delete-button"
@@ -760,7 +897,17 @@ function App() {
                             : 'Unavailable'}
                         </span>
                       </td>
-                      <td>
+                      <td className="resource-actions">
+                        <button
+                          type="button"
+                          className="edit-button"
+                          onClick={() =>
+                            handleStartEdit('hospitals', hospital)
+                          }
+                        >
+                          Edit
+                        </button>
+
                         <button
                           type="button"
                           className="delete-button"
@@ -911,7 +1058,17 @@ function App() {
                           {patient.emergencyPriority}/5
                         </span>
                       </td>
-                      <td>
+                      <td className="resource-actions">
+                        <button
+                          type="button"
+                          className="edit-button"
+                          onClick={() =>
+                            handleStartEdit('patients', patient)
+                          }
+                        >
+                          Edit
+                        </button>
+
                         <button
                           type="button"
                           className="delete-button"
@@ -938,6 +1095,244 @@ function App() {
             </div>
           )}
         </section>
+
+        {/* Edit Resource Form */}
+        {editingResource && (
+          <section className="panel edit-panel" id="edit-resource">
+            <div className="section-header">
+              <h2>
+                Edit{' '}
+                {editingResource.type === 'ambulances'
+                  ? 'Ambulance'
+                  : editingResource.type === 'hospitals'
+                    ? 'Hospital'
+                    : 'Patient'}
+              </h2>
+
+              <button type="button" onClick={handleCancelEdit}>
+                Cancel
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEdit} className="resource-form">
+              {editingResource.type === 'ambulances' ? (
+                <>
+                  <label htmlFor="editAmbulanceNumber">
+                    Ambulance Number
+                  </label>
+                  <input
+                    id="editAmbulanceNumber"
+                    value={editForm.ambulanceNumber}
+                    onChange={(event) =>
+                      setEditForm({
+                        ...editForm,
+                        ambulanceNumber: event.target.value,
+                      })
+                    }
+                    required
+                  />
+
+                  <label htmlFor="editDriverName">Driver Name</label>
+                  <input
+                    id="editDriverName"
+                    value={editForm.driverName}
+                    onChange={(event) =>
+                      setEditForm({
+                        ...editForm,
+                        driverName: event.target.value,
+                      })
+                    }
+                    required
+                  />
+
+                  <label htmlFor="editAmbulanceLatitude">Latitude</label>
+                  <input
+                    id="editAmbulanceLatitude"
+                    type="number"
+                    step="any"
+                    min="-90"
+                    max="90"
+                    value={editForm.latitude}
+                    onChange={(event) =>
+                      setEditForm({
+                        ...editForm,
+                        latitude: event.target.value,
+                      })
+                    }
+                    required
+                  />
+
+                  <label htmlFor="editAmbulanceLongitude">Longitude</label>
+                  <input
+                    id="editAmbulanceLongitude"
+                    type="number"
+                    step="any"
+                    min="-180"
+                    max="180"
+                    value={editForm.longitude}
+                    onChange={(event) =>
+                      setEditForm({
+                        ...editForm,
+                        longitude: event.target.value,
+                      })
+                    }
+                    required
+                  />
+
+                  <label htmlFor="editAmbulanceStatus">Status</label>
+                  <select
+                    id="editAmbulanceStatus"
+                    value={editForm.status}
+                    onChange={(event) =>
+                      setEditForm({
+                        ...editForm,
+                        status: event.target.value,
+                      })
+                    }
+                  >
+                    <option value="available">Available</option>
+                    <option value="busy">Busy</option>
+                    <option value="offline">Offline</option>
+                  </select>
+                </>
+              ) : (
+                <>
+                  <label htmlFor="editResourceName">
+                    {editingResource.type === 'hospitals'
+                      ? 'Hospital Name'
+                      : 'Patient Name'}
+                  </label>
+                  <input
+                    id="editResourceName"
+                    value={editForm.name}
+                    onChange={(event) =>
+                      setEditForm({
+                        ...editForm,
+                        name: event.target.value,
+                      })
+                    }
+                    required
+                  />
+
+                  <label htmlFor="editResourceLatitude">Latitude</label>
+                  <input
+                    id="editResourceLatitude"
+                    type="number"
+                    step="any"
+                    min="-90"
+                    max="90"
+                    value={editForm.latitude}
+                    onChange={(event) =>
+                      setEditForm({
+                        ...editForm,
+                        latitude: event.target.value,
+                      })
+                    }
+                    required
+                  />
+
+                  <label htmlFor="editResourceLongitude">Longitude</label>
+                  <input
+                    id="editResourceLongitude"
+                    type="number"
+                    step="any"
+                    min="-180"
+                    max="180"
+                    value={editForm.longitude}
+                    onChange={(event) =>
+                      setEditForm({
+                        ...editForm,
+                        longitude: event.target.value,
+                      })
+                    }
+                    required
+                  />
+
+                  {editingResource.type === 'hospitals' ? (
+                    <>
+                      <label htmlFor="editAvailableBeds">
+                        Available Beds
+                      </label>
+                      <input
+                        id="editAvailableBeds"
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={editForm.availableBeds}
+                        onChange={(event) =>
+                          setEditForm({
+                            ...editForm,
+                            availableBeds: event.target.value,
+                          })
+                        }
+                        required
+                      />
+
+                      <label htmlFor="editEmergencyAvailable">
+                        Emergency Services
+                      </label>
+                      <select
+                        id="editEmergencyAvailable"
+                        value={String(editForm.emergencyAvailable)}
+                        onChange={(event) =>
+                          setEditForm({
+                            ...editForm,
+                            emergencyAvailable:
+                              event.target.value === 'true',
+                          })
+                        }
+                      >
+                        <option value="true">Available</option>
+                        <option value="false">Unavailable</option>
+                      </select>
+                    </>
+                  ) : (
+                    <>
+                      <label htmlFor="editEmergencyPriority">
+                        Emergency Priority (1–5)
+                      </label>
+                      <select
+                        id="editEmergencyPriority"
+                        value={editForm.emergencyPriority}
+                        onChange={(event) =>
+                          setEditForm({
+                            ...editForm,
+                            emergencyPriority: event.target.value,
+                          })
+                        }
+                      >
+                        <option value="1">1 — Lowest</option>
+                        <option value="2">2 — Low</option>
+                        <option value="3">3 — Medium</option>
+                        <option value="4">4 — High</option>
+                        <option value="5">5 — Highest</option>
+                      </select>
+                    </>
+                  )}
+                </>
+              )}
+
+              <div className="edit-form-actions">
+                <button type="submit" disabled={isSavingEdit}>
+                  {isSavingEdit ? 'Saving Changes...' : 'Save Changes'}
+                </button>
+
+                <button
+                  type="button"
+                  className="cancel-edit-button"
+                  onClick={handleCancelEdit}
+                  disabled={isSavingEdit}
+                >
+                  Cancel
+                </button>
+              </div>
+
+              {editMessage && (
+                <p className="form-message">{editMessage}</p>
+              )}
+            </form>
+          </section>
+        )}
 
         {/* Route Map */}
         <section className="panel" id="route-map">

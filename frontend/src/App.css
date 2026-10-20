@@ -766,3 +766,61 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+/* Edit Resource Buttons */
+.resource-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.edit-button {
+  padding: 8px 14px;
+  border: 1px solid #bfdbfe;
+  border-radius: 7px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.edit-button:hover {
+  background: #dbeafe;
+}
+
+/* Edit Resource Form */
+.edit-panel {
+  border-color: #bfdbfe;
+}
+
+.edit-form-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  grid-column: 1 / -1;
+}
+
+.resource-form .cancel-edit-button {
+  background: #64748b;
+}
+
+.resource-form .cancel-edit-button:hover:not(:disabled) {
+  background: #475569;
+}
+
+.resource-form .edit-form-actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 700px) {
+  .resource-actions {
+    gap: 6px;
+  }
+
+  .resource-actions button {
+    padding: 7px 10px;
+  }
+}
